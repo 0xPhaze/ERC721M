@@ -7,6 +7,3 @@
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/brockelmore/forge-std
-[submodule "lib/ERC721AX"]
-	path = lib/ERC721AX
-	url = https://github.com/0xphaze/ERC721AX
