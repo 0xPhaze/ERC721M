@@ -10,14 +10,12 @@ error MintZeroQuantity();
 error MintExceedsMaxSupply();
 error MintExceedsMaxPerWallet();
 
-error QueryForZeroAddress();
-
-error TokenIdUnstaked();
-error ExceedsStakingLimit();
-
 error TransferFromIncorrectOwner();
 error TransferToNonERC721Receiver();
 error TransferToZeroAddress();
+
+error TokenIdUnstaked();
+error ExceedsStakingLimit();
 
 abstract contract ERC721M {
     event Transfer(address indexed from, address indexed to, uint256 indexed id);
@@ -135,7 +133,7 @@ abstract contract ERC721M {
                     if (
                         nextSlot.owner == address(0) &&
                         // && nextTokenId != _currentIndex
-                        nextTokenId < startingIndex + collectionSize // it's ok to check collectionSize instead of _currentIndex
+                        nextTokenId != startingIndex + collectionSize // it's ok to check collectionSize instead of _currentIndex
                     ) {
                         nextSlot.owner = from;
                         nextSlot.lastTransfer = tokenData.lastTransfer;
@@ -235,8 +233,9 @@ abstract contract ERC721M {
         // because tokenData in this case is implicit and needs to carry over
         if (tokenData.mintAndStaked) {
             unchecked {
-                if (!tokenData.nextTokenDataSet && _tokenData[tokenId + 1].owner == address(0) && _exists(tokenId))
-                    _tokenData[tokenId] = tokenData;
+                uint256 nextTokenId = tokenId + 1;
+                if (!tokenData.nextTokenDataSet && _tokenData[nextTokenId].owner == address(0) && _exists(tokenId))
+                    _tokenData[nextTokenId] = tokenData;
 
                 tokenData.nextTokenDataSet = true;
                 tokenData.mintAndStaked = false;
@@ -248,7 +247,7 @@ abstract contract ERC721M {
 
         emit Transfer(address(this), to, tokenId);
 
-        userData.balance--;
+        userData.balance++;
         userData.numStaked--;
         userData.stakeStart = uint40(block.timestamp);
 
@@ -310,7 +309,19 @@ abstract contract ERC721M {
 
     // O(N) read-only functions
 
-    function tokenIdsOf(address user, uint256 type_) external view returns (uint256[] memory) {
+    function tokenIdsOf(address user) external view returns (uint256[] memory) {
+        return tokenIdsOf(user, 0);
+    }
+
+    function stakedTokenIdsOf(address user) external view returns (uint256[] memory) {
+        return tokenIdsOf(user, 1);
+    }
+
+    function allTokenIdsOf(address user) external view returns (uint256[] memory) {
+        return tokenIdsOf(user, 2);
+    }
+
+    function tokenIdsOf(address user, uint256 type_) private view returns (uint256[] memory) {
         unchecked {
             uint256 balance = type_ == 0 ? this.balanceOf(user) : type_ == 1
                 ? this.numStaked(user)
@@ -361,7 +372,13 @@ abstract contract ERC721M {
 
             for (uint256 curr = tokenId; ; --curr) {
                 tokenData = _tokenData[curr];
-                if (tokenData.owner != address(0)) return tokenData;
+                if (tokenData.owner != address(0)) {
+                    // @note need to watch out here if at any point aux data is introduced
+                    // perhaps new TokenData should be created, this part is quite nuanced
+                    if (tokenId == curr || tokenData.mintAndStaked) return tokenData;
+                    tokenData.staked = false;
+                    return tokenData;
+                }
             }
 
             revert NonexistentToken();
@@ -380,20 +397,21 @@ abstract contract ERC721M {
             uint256 startTokenId = _currentIndex;
             uint256 supply = startTokenId - startingIndex;
 
-            // warning: overflows can happen, summing that this is guarded against by using maxPerTx or adding a price
+            // we're assuming that this won't ever overflow, because
+            // emitting that many events would cost too much gas
+            // in most cases this is restricted by inheriting contract
             if (supply + quantity > collectionSize) revert MintExceedsMaxSupply();
 
             UserData memory userData = _userData[to];
-            uint256 newBalance = userData.balance + quantity;
-            uint256 newNumMinted = userData.numMinted + quantity;
 
-            if (newBalance > maxPerWallet && to == msg.sender && address(this).code.length != 0)
+            userData.numMinted += uint40(quantity);
+
+            if (userData.numMinted > maxPerWallet && to == msg.sender && address(this).code.length != 0)
                 revert MintExceedsMaxPerWallet();
 
             // don't have to care about next token data if only minting one
             // could optimize to implicitly flag last token id of batch
-            // if (quantity == 1) tokenData.nextTokenDataSet = true;
-            TokenData memory tokenData = TokenData(to, uint40(block.timestamp), 1, stake_, stake_, quantity == 1);
+            _tokenData[startTokenId] = TokenData(to, uint40(block.timestamp), 1, stake_, stake_, quantity == 1);
 
             if (stake_) {
                 uint256 numStaked_ = userData.numStaked;
@@ -403,25 +421,22 @@ abstract contract ERC721M {
 
                 if (numStaked_ + quantity > stakingLimit) revert ExceedsStakingLimit();
                 if (numStaked_ == 0) userData.stakeStart = uint40(block.timestamp);
-
-                uint256 tokenId;
-                for (uint256 i; i < quantity; ++i) {
-                    tokenId = startTokenId + i;
-
-                    // (userData, tokenData) = _beforeStakeDataTransform(tokenId, userData, tokenData);
-
-                    emit Transfer(address(0), to, tokenId);
-                    emit Transfer(to, address(this), tokenId);
-                }
             } else {
                 userData.balance += uint40(quantity);
-                for (uint256 i; i < quantity; ++i) emit Transfer(address(0), to, startTokenId + i);
             }
 
             _userData[to] = userData;
-            _tokenData[startTokenId] = tokenData;
 
-            totalSupply += quantity;
+            uint256 updatedIndex = startTokenId;
+            uint256 end = updatedIndex + quantity;
+
+            do {
+                // (userData, tokenData) = _beforeStakeDataTransform(tokenId, userData, tokenData);
+                emit Transfer(address(0), to, updatedIndex);
+                if (stake_) emit Transfer(to, address(this), updatedIndex);
+            } while (++updatedIndex != end);
+
+            _currentIndex = updatedIndex;
         }
     }
 
@@ -443,7 +458,7 @@ abstract contract ERC721M {
     /* ------------- Virtual (hooks) ------------- */
 
     function _beforeStakeDataTransform(
-        uint256, // tokenId
+        uint256, /* tokenId */
         uint256 userData,
         uint256 tokenData
     ) internal view virtual returns (uint256, uint256) {
@@ -451,7 +466,7 @@ abstract contract ERC721M {
     }
 
     function _beforeUnstakeDataTransform(
-        uint256, // tokenId
+        uint256, /* tokenId */
         uint256 userData,
         uint256 tokenData
     ) internal view virtual returns (uint256, uint256) {
