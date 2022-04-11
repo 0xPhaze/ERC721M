@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
-import {ERC721M} from "../ERC721M.sol";
+// import {ERC721M} from "../ERC721M.sol";
+import {ERC721M} from "../ERC721MMC.sol";
 
 contract MockERC721M is ERC721M {
     constructor(
@@ -22,11 +23,18 @@ contract MockERC721M is ERC721M {
         _mintAndStake(to, quantity, true);
     }
 
-    function _pendingReward(address, UserData memory userData) internal view override returns (uint256) {
+    function _pendingReward(address, uint256) internal pure override returns (uint256) {
         return 1;
     }
 
-    function _payoutReward(address user, uint256 reward) internal override {
+    function _payoutReward(address, uint256) internal pure override {
         return;
     }
+    // function _pendingReward(address, UserData memory userData) internal view override returns (uint256) {
+    //     return 1;
+    // }
+
+    // function _payoutReward(address user, uint256 reward) internal override {
+    //     return;
+    // }
 }

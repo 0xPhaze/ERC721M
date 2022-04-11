@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-error CallerNotOwnerNorApproved();
-error NonexistentToken();
 error IncorrectOwner();
+error NonexistentToken();
+error CallerNotOwnerNorApproved();
 
-error MintToZeroAddress();
 error MintZeroQuantity();
+error MintToZeroAddress();
 error MintExceedsMaxSupply();
 error MintExceedsMaxPerWallet();
 
+error TransferToZeroAddress();
 error TransferFromIncorrectOwner();
 error TransferToNonERC721Receiver();
-error TransferToZeroAddress();
 
 error TokenIdUnstaked();
 error ExceedsStakingLimit();
