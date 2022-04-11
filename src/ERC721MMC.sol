@@ -161,12 +161,12 @@ abstract contract ERC721MMC {
         uint256 tokenId,
         uint256 userData
     ) private returns (uint256) {
-        uint256 _numStaked = userData.numStaked();
+        uint256 numStaked_ = userData.numStaked();
 
         uint256 tokenData = _tokenDataOf(tokenId);
         address owner = tokenData.owner();
 
-        if (_numStaked >= stakingLimit) revert ExceedsStakingLimit();
+        if (numStaked_ >= stakingLimit) revert ExceedsStakingLimit();
         if (owner != from) revert IncorrectOwner();
 
         delete getApproved[tokenId];
@@ -178,7 +178,7 @@ abstract contract ERC721MMC {
         tokenData = tokenData.setstaked();
         userData = userData.decreaseBalance(1).increaseNumStaked(1);
 
-        if (_numStaked == 0) userData = userData.setStakeStart(block.timestamp);
+        if (numStaked_ == 0) userData = userData.setStakeStart(block.timestamp);
 
         _tokenData[tokenId] = tokenData;
 
@@ -231,33 +231,33 @@ abstract contract ERC721MMC {
             interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
     }
 
-    function ownerOf(uint256 tokenId) external view returns (address) {
-        return _tokenDataOf(tokenId).owner();
-    }
-
-    function trueOwnerOf(uint256 tokenId) external view returns (address) {
-        return _tokenDataOf(tokenId).trueOwner();
-    }
-
-    function balanceOf(address owner) external view returns (uint256) {
+    function balanceOf(address owner) public view returns (uint256) {
         if (owner == address(0)) revert QueryForZeroAddress();
         return _userData[owner].balance();
     }
 
-    function numStaked(address user) external view returns (uint256) {
+    function numMinted(address user) public view returns (uint256) {
+        return _userData[user].numMinted();
+    }
+
+    function ownerOf(uint256 tokenId) public view returns (address) {
+        return _tokenDataOf(tokenId).owner();
+    }
+
+    function trueOwnerOf(uint256 tokenId) public view returns (address) {
+        return _tokenDataOf(tokenId).trueOwner();
+    }
+
+    function numStaked(address user) public view returns (uint256) {
         return _userData[user].numStaked();
     }
 
-    function numOwned(address user) external view returns (uint256) {
+    function numOwned(address user) public view returns (uint256) {
         uint256 userData = _userData[user];
         return userData.balance() + userData.numStaked();
     }
 
-    function numMinted(address user) external view returns (uint256) {
-        return _userData[user].numMinted();
-    }
-
-    function pendingReward(address user) external view returns (uint256) {
+    function pendingReward(address user) public view returns (uint256) {
         return _pendingReward(user, _userData[user]);
     }
 
@@ -277,13 +277,11 @@ abstract contract ERC721MMC {
 
     function tokenIdsOf(address user, uint256 type_) private view returns (uint256[] memory) {
         unchecked {
-            uint256 numTotal = type_ == 0 ? this.balanceOf(user) : type_ == 1
-                ? this.numStaked(user)
-                : this.numOwned(user);
+            uint256 balance = type_ == 0 ? balanceOf(user) : type_ == 1 ? numStaked(user) : numOwned(user);
 
-            uint256[] memory ids = new uint256[](numTotal);
+            uint256[] memory ids = new uint256[](balance);
 
-            if (numTotal == 0) return ids;
+            if (balance == 0) return ids;
 
             uint256 count;
             for (uint256 i = startingIndex; i < totalSupply + startingIndex; ++i) {
@@ -292,7 +290,7 @@ abstract contract ERC721MMC {
                     bool staked = tokenData.staked();
                     if ((type_ == 0 && !staked) || (type_ == 1 && staked) || type_ == 2) {
                         ids[count++] = i;
-                        if (numTotal == count) return ids;
+                        if (balance == count) return ids;
                     }
                 }
             }
@@ -341,16 +339,16 @@ abstract contract ERC721MMC {
         bool stake_
     ) internal {
         unchecked {
-            uint256 totalSupply_ = totalSupply;
-            uint256 startTokenId = startingIndex + totalSupply_;
+            if (to == address(0)) revert MintToZeroAddress();
+            if (quantity == 0) revert MintZeroQuantity();
+
+            uint256 supply = totalSupply;
+            uint256 startTokenId = startingIndex + supply;
 
             uint256 userData = _userData[to];
             uint256 numMinted_ = userData.numMinted();
 
-            if (to == address(0)) revert MintToZeroAddress();
-            if (quantity == 0) revert MintZeroQuantity();
-
-            if (totalSupply_ + quantity > collectionSize) revert MintExceedsMaxSupply();
+            if (supply + quantity > collectionSize) revert MintExceedsMaxSupply();
             if (numMinted_ + quantity > maxPerWallet && to == msg.sender && address(this).code.length != 0)
                 revert MintExceedsMaxPerWallet();
 
@@ -365,13 +363,13 @@ abstract contract ERC721MMC {
             if (quantity == 1) tokenData = tokenData.flagNextTokenDataSet();
 
             if (stake_) {
-                uint256 _numStaked = userData.numStaked();
+                uint256 numStaked_ = userData.numStaked();
 
                 userData = claimReward(userData);
                 userData = userData.increaseNumStaked(quantity);
 
-                if (_numStaked + quantity > stakingLimit) revert ExceedsStakingLimit();
-                if (_numStaked == 0) userData = userData.setStakeStart(block.timestamp);
+                if (numStaked_ + quantity > stakingLimit) revert ExceedsStakingLimit();
+                if (numStaked_ == 0) userData = userData.setStakeStart(block.timestamp);
 
                 uint256 tokenId;
                 for (uint256 i; i < quantity; ++i) {
@@ -412,7 +410,7 @@ abstract contract ERC721MMC {
     /* ------------- Virtual (hooks) ------------- */
 
     function _beforeStakeDataTransform(
-        uint256, // tokenId
+        uint256, /* tokenId */
         uint256 userData,
         uint256 tokenData
     ) internal view virtual returns (uint256, uint256) {
@@ -420,7 +418,7 @@ abstract contract ERC721MMC {
     }
 
     function _beforeUnstakeDataTransform(
-        uint256, // tokenId
+        uint256, /* tokenId */
         uint256 userData,
         uint256 tokenData
     ) internal view virtual returns (uint256, uint256) {

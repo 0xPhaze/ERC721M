@@ -77,11 +77,9 @@ abstract contract ERC721M {
     /* ------------- External ------------- */
 
     function approve(address to, uint256 tokenId) external {
-        TokenData memory tokenData = _tokenDataOf(tokenId);
-        address owner = tokenData.owner;
+        address owner = ownerOf(tokenId);
 
-        if ((msg.sender != owner && !isApprovedForAll[owner][msg.sender]) || tokenData.staked)
-            revert CallerNotOwnerNorApproved();
+        if (msg.sender != owner && !isApprovedForAll[owner][msg.sender]) revert CallerNotOwnerNorApproved();
 
         getApproved[tokenId] = to;
         emit Approval(owner, to, tokenId);
@@ -149,7 +147,7 @@ abstract contract ERC721M {
         address from,
         address to,
         uint256 tokenId
-    ) public {
+    ) external {
         safeTransferFrom(from, to, tokenId, "");
     }
 
@@ -247,8 +245,10 @@ abstract contract ERC721M {
 
         emit Transfer(address(this), to, tokenId);
 
-        userData.balance++;
-        userData.numStaked--;
+        unchecked {
+            ++userData.balance;
+            --userData.numStaked;
+        }
         userData.stakeStart = uint40(block.timestamp);
 
         return userData;
@@ -303,7 +303,7 @@ abstract contract ERC721M {
         return userData.balance + userData.numStaked;
     }
 
-    function pendingReward(address user) external view returns (uint256) {
+    function pendingReward(address user) public view returns (uint256) {
         return _pendingReward(user, _userData[user]);
     }
 
@@ -323,9 +323,7 @@ abstract contract ERC721M {
 
     function tokenIdsOf(address user, uint256 type_) private view returns (uint256[] memory) {
         unchecked {
-            uint256 balance = type_ == 0 ? this.balanceOf(user) : type_ == 1
-                ? this.numStaked(user)
-                : this.numOwned(user);
+            uint256 balance = type_ == 0 ? balanceOf(user) : type_ == 1 ? numStaked(user) : numOwned(user);
 
             uint256[] memory ids = new uint256[](balance);
 
@@ -399,7 +397,7 @@ abstract contract ERC721M {
 
             // we're assuming that this won't ever overflow, because
             // emitting that many events would cost too much gas
-            // in most cases this is restricted by inheriting contract
+            // in most cases this is restricted by child contract
             if (supply + quantity > collectionSize) revert MintExceedsMaxSupply();
 
             UserData memory userData = _userData[to];

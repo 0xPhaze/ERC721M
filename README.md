@@ -1,4 +1,4 @@
-# ERC721M
+# ERC721M (WIP)
 
 ERC721M allows for cheap and efficient staking.
 Thus far, it has the cheapest gas costs on "minting and staking" directly.
