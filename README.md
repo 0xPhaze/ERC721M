@@ -7,3 +7,9 @@ The idea was first introduced in the [Mad Mouse Circus NFT](https://etherscan.io
 Implementation and tests are preliminary.
 This should not be used in production until sufficiently tested.
 I am not responsible for any damage caused using this contract.
+
+[Gas snapshot](.gas-snapshot)
+
+```
+forge snapshot --match-contract GasTest
+```

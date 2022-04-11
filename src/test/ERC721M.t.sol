@@ -7,7 +7,7 @@ import {Vm} from "forge-std/Vm.sol";
 // import {console} from "forge-std/console.sol";
 
 import "../ERC721M.sol";
-import {MockERC721M} from "./MockERC721M.sol";
+import {MockERC721M} from "./mocks/MockERC721M.sol";
 
 contract ERC721MTest is DSTestPlus {
     Vm vm = Vm(HEVM_ADDRESS);

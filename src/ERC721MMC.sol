@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ERC721MLibrary.sol";
+import "./ERC721MMCLibrary.sol";
 
 error IncorrectOwner();
 error NonexistentToken();
@@ -23,7 +23,7 @@ error ApproveToCurrentOwner();
 error TokenIdUnstaked();
 error ExceedsStakingLimit();
 
-abstract contract ERC721M {
+abstract contract ERC721MMC {
     using UserDataOps for uint256;
     using TokenDataOps for uint256;
 
