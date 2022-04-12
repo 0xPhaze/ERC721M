@@ -22,8 +22,10 @@ contract MockERC721M is ERC721M {
         _mintAndStake(to, quantity, true);
     }
 
-    function _pendingReward(address, UserData memory) internal pure override returns (uint256) {
-        return 1;
+    function _pendingReward(address, UserData memory userData) internal view override returns (uint256) {
+        unchecked {
+            return (userData.numStaked * 1e18 * (block.timestamp - userData.lastClaimed)) / (1 days);
+        }
     }
 
     function _payoutReward(address, uint256) internal pure override {

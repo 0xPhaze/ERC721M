@@ -15,7 +15,16 @@ Implementation and tests are preliminary.
 This should not be used in production until sufficiently tested.
 I am not responsible for any damage caused using this contract.
 
-[Gas snapshot](.gas-snapshot)
+Check [gas snapshot](.gas-snapshot) for more recent results.
+
+| Function                  | Gas    |
+| ------------------------- | ------ |
+| mintAndStake1_ERC721A()   | 180863 |
+| mintAndStake1_ERC721M()   | 45601  |
+| mintAndStake1_ERC721MMC() | 44628  |
+| mintAndStake5_ERC721A()   | 390732 |
+| mintAndStake5_ERC721M()   | 61184  |
+| mintAndStake5_ERC721MMC() | 60181  |
 
 ```
 forge snapshot --match-contract GasTest

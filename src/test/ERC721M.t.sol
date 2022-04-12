@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Vm} from "forge-std/Vm.sol";
-
-// import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 
 import "../ERC721M.sol";
 import {MockERC721M} from "./mocks/MockERC721M.sol";

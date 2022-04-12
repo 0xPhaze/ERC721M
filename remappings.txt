@@ -1,3 +1,5 @@
 forge-std/=lib/forge-std/src/
 solmate/=lib/solmate/src/
 ds-test/=lib/ds-test/src/
+ERC721A/=lib/ERC721A/contracts
+@openzeppelin/=lib/openzeppelin-contracts

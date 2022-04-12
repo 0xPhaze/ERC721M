@@ -176,7 +176,7 @@ abstract contract ERC721MMC {
         (userData, tokenData) = applySafeDataTransform(userData, tokenData, userDataX, tokenDataX);
 
         tokenData = tokenData.setstaked();
-        userData = userData.decreaseBalance(1).increaseNumStaked(1);
+        userData = userData.decreaseBalance(1).increaseNumStaked(1).setLastClaimed(block.timestamp);
 
         if (numStaked_ == 0) userData = userData.setStakeStart(block.timestamp);
 
@@ -397,7 +397,7 @@ abstract contract ERC721MMC {
         return claimReward(userData);
     }
 
-    function claimReward(uint256 userData) private returns (uint256) {
+    function claimReward(uint256 userData) internal virtual returns (uint256) {
         uint256 reward = _pendingReward(msg.sender, userData);
 
         userData = userData.setLastClaimed(block.timestamp);
@@ -425,7 +425,7 @@ abstract contract ERC721MMC {
         return (userData, tokenData);
     }
 
-    function _pendingReward(address, uint256 userData) internal view virtual returns (uint256);
+    function _pendingReward(address user, uint256 userData) internal view virtual returns (uint256);
 
     function _payoutReward(address user, uint256 reward) internal virtual;
 }

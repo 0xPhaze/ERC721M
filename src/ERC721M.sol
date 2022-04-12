@@ -203,6 +203,7 @@ abstract contract ERC721M {
         unchecked {
             --userData.balance;
             ++userData.numStaked;
+            userData.lastClaimed = uint40(block.timestamp);
         }
 
         if (userData.numStaked == 0) userData.stakeStart = uint40(block.timestamp);
@@ -443,7 +444,7 @@ abstract contract ERC721M {
         return claimReward(userData);
     }
 
-    function claimReward(UserData memory userData) private returns (UserData memory) {
+    function claimReward(UserData memory userData) internal virtual returns (UserData memory) {
         uint256 reward = _pendingReward(msg.sender, userData);
 
         userData.lastClaimed = uint40(block.timestamp);

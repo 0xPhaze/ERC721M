@@ -2,8 +2,11 @@
 pragma solidity >=0.8.0;
 
 import {ERC721MMC} from "../../ERC721MMC.sol";
+import {UserDataOps} from "../../ERC721MMCLibrary.sol";
 
 contract MockERC721MMC is ERC721MMC {
+    using UserDataOps for uint256;
+
     constructor(
         string memory name,
         string memory symbol,
@@ -22,8 +25,10 @@ contract MockERC721MMC is ERC721MMC {
         _mintAndStake(to, quantity, true);
     }
 
-    function _pendingReward(address, uint256) internal pure override returns (uint256) {
-        return 1;
+    function _pendingReward(address, uint256 userData) internal view override returns (uint256) {
+        unchecked {
+            return (userData.numStaked() * 1e18 * (block.timestamp - userData.lastClaimed())) / (1 days);
+        }
     }
 
     function _payoutReward(address, uint256) internal pure override {
