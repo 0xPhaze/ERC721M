@@ -43,7 +43,6 @@ abstract contract ERC721M {
     uint256 public immutable collectionSize;
     uint256 public immutable maxPerWallet;
 
-    // note: hard limit of 255, otherwise overflows can happen
     uint256 constant stakingLimit = 255;
 
     uint256 private _currentIndex;
@@ -196,7 +195,7 @@ abstract contract ERC721M {
         delete getApproved[tokenId];
 
         // hook, used for reading DNA, updating role balances,
-        // (uint256 userDataX, uint256 tokenDataX) = _beforeStakeDataTransform(tokenId, userData, tokenData);
+        // (userData, tokenData) = _beforeStakeDataTransform(tokenId, userData, tokenData);
 
         tokenData.staked = true;
 
@@ -430,7 +429,7 @@ abstract contract ERC721M {
             uint256 end = updatedIndex + quantity;
 
             do {
-                // (userData, tokenData) = _beforeStakeDataTransform(tokenId, userData, tokenData);
+                // (userData, tokenData) = _beforeStakeDataTransform(updatedIndex, userData, tokenData);
                 emit Transfer(address(0), to, updatedIndex);
                 if (stake_) emit Transfer(to, address(this), updatedIndex);
             } while (++updatedIndex != end);
@@ -458,17 +457,17 @@ abstract contract ERC721M {
 
     // function _beforeStakeDataTransform(
     //     uint256, /* tokenId */
-    //     uint256 userData,
-    //     uint256 tokenData
-    // ) internal view virtual returns (uint256, uint256) {
+    //     UserData memory userData,
+    //     TokenData memory tokenData
+    // ) internal view virtual returns (UserData memory, TokenData memory) {
     //     return (userData, tokenData);
     // }
 
     // function _beforeUnstakeDataTransform(
     //     uint256, /* tokenId */
-    //     uint256 userData,
-    //     uint256 tokenData
-    // ) internal view virtual returns (uint256, uint256) {
+    //     UserData memory userData,
+    //     TokenData memory tokenData
+    // ) internal view virtual returns (UserData memory, TokenData memory) {
     //     return (userData, tokenData);
     // }
 

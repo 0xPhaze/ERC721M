@@ -43,8 +43,7 @@ abstract contract ERC721MMC {
     uint256 immutable collectionSize;
     uint256 immutable maxPerWallet;
 
-    // note: hard limit of 255, otherwise overflows can happen
-    uint256 constant stakingLimit = 100;
+    uint256 constant stakingLimit = 255;
 
     mapping(uint256 => uint256) internal _tokenData;
     mapping(address => uint256) internal _userData;
