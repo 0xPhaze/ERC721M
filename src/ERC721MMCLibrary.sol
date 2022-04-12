@@ -350,8 +350,11 @@ library TokenDataOps {
     }
 
     function incrementOwnerCount(uint256 tokenData) internal pure returns (uint256) {
-        uint256 newOwnerCount = min(ownerCount(tokenData) + 1, 0xFFFFF);
-        return (tokenData & ~(uint256(0xFFFFF) << 200)) | (newOwnerCount << 200);
+        unchecked {
+            if (ownerCount(tokenData) < 0xFFFFF)
+                return (tokenData & ~(uint256(0xFFFFF) << 200)) | ((ownerCount(tokenData) + 1) << 200);
+            return tokenData;
+        }
     }
 
     function resetOwnerCount(uint256 tokenData) internal pure returns (uint256) {

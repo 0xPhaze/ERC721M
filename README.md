@@ -1,5 +1,12 @@
 # ERC721M (WIP)
 
+```ml
+src
+├── ERC721M.sol - "Written using structs as seen in ERC721A"
+├── ERC721MMC.sol - "Written using uint256 bitmaps (cheaper) as used by Mad Mouse Circus"
+└── ERC721MMCLibrary.sol "Library for bitmap manipulation"
+```
+
 [ERC721M](https://lovethewired.github.io/blog/2022/madmouse) allows for cheap and efficient staking.
 Thus far, it has the cheapest gas costs on "minting and staking" directly.
 The idea was first introduced in the [Mad Mouse Circus NFT](https://etherscan.io/address/0x3ad30c5e2985e960e89f4a28efc91ba73e104b77#code) project.

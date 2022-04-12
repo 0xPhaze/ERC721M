@@ -121,7 +121,7 @@ abstract contract ERC721M {
                 currSlot.owner = to;
                 currSlot.lastTransfer = uint40(block.timestamp);
                 currSlot.nextTokenDataSet = true;
-                ++currSlot.ownerCount;
+                if (currSlot.ownerCount < type(uint24).max) ++currSlot.ownerCount;
 
                 if (!tokenData.nextTokenDataSet) {
                     // If the ownership slot of tokenId+1 is not explicitly set, that means the transfer initiator owns it.
@@ -455,21 +455,21 @@ abstract contract ERC721M {
 
     /* ------------- Virtual (hooks) ------------- */
 
-    function _beforeStakeDataTransform(
-        uint256, /* tokenId */
-        uint256 userData,
-        uint256 tokenData
-    ) internal view virtual returns (uint256, uint256) {
-        return (userData, tokenData);
-    }
+    // function _beforeStakeDataTransform(
+    //     uint256, /* tokenId */
+    //     uint256 userData,
+    //     uint256 tokenData
+    // ) internal view virtual returns (uint256, uint256) {
+    //     return (userData, tokenData);
+    // }
 
-    function _beforeUnstakeDataTransform(
-        uint256, /* tokenId */
-        uint256 userData,
-        uint256 tokenData
-    ) internal view virtual returns (uint256, uint256) {
-        return (userData, tokenData);
-    }
+    // function _beforeUnstakeDataTransform(
+    //     uint256, /* tokenId */
+    //     uint256 userData,
+    //     uint256 tokenData
+    // ) internal view virtual returns (uint256, uint256) {
+    //     return (userData, tokenData);
+    // }
 
     function _pendingReward(address, UserData memory userData) internal view virtual returns (uint256);
 

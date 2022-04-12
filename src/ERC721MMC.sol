@@ -14,7 +14,7 @@ error MintExceedsMaxSupply();
 error MintExceedsMaxPerWallet();
 
 error TransferFromIncorrectOwner();
-error TransferToNonERC721ReceiverImplementer();
+error TransferToNonERC721Receiver();
 error TransferToZeroAddress();
 
 error ApprovalToCaller();
@@ -135,7 +135,7 @@ abstract contract ERC721MMC {
             to.code.length != 0 &&
             IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) !=
             IERC721Receiver(to).onERC721Received.selector
-        ) revert TransferToNonERC721ReceiverImplementer();
+        ) revert TransferToNonERC721Receiver();
     }
 
     function stake(uint256[] calldata tokenIds) external payable {
