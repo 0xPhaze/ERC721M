@@ -5,10 +5,10 @@ import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {console} from "forge-std/console.sol";
 
-import "../ERC721M.sol";
-import {MockERC721M} from "./mocks/MockERC721M.sol";
+import "../ERC721MLockable.sol";
+import {MockERC721MLockable} from "./mocks/MockERC721MLockable.sol";
 
-contract ERC721MTest is DSTestPlus {
+contract ERC721MLockableTest is DSTestPlus {
     Vm vm = Vm(HEVM_ADDRESS);
 
     address alice = address(0x101);
@@ -16,17 +16,17 @@ contract ERC721MTest is DSTestPlus {
     address chris = address(0x103);
     address tester = address(this);
 
-    MockERC721M token;
+    MockERC721MLockable token;
 
     function setUp() public {
-        token = new MockERC721M("Token", "TKN", 1, 30, 10);
+        token = new MockERC721MLockable("Token", "TKN", 1, 30, 10);
 
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
         vm.label(chris, "Chris");
 
         vm.label(tester, "Tester");
-        vm.label(address(token), "ERC721M");
+        vm.label(address(token), "ERC721MLockable");
     }
 
     /* ------------- stake() ------------- */
