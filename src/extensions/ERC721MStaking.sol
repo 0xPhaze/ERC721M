@@ -43,9 +43,9 @@ abstract contract ERC721MStaking is ERC721MLockable {
         unchecked {
             uint256 userData = _claimReward(user);
 
-            for (uint256 i; i < tokenIds.length; ++i) _lock(msg.sender, tokenIds[i]);
+            for (uint256 i; i < tokenIds.length; ++i) _lock(user, tokenIds[i]);
 
-            ds().userData[msg.sender] = userData.increaseNumLocked(tokenIds.length);
+            ds().userData[user] = userData.increaseNumLocked(tokenIds.length);
         }
     }
 
@@ -53,9 +53,9 @@ abstract contract ERC721MStaking is ERC721MLockable {
         unchecked {
             uint256 userData = _claimReward(user);
 
-            for (uint256 i; i < tokenIds.length; ++i) _unlock(msg.sender, tokenIds[i]);
+            for (uint256 i; i < tokenIds.length; ++i) _unlock(user, tokenIds[i]);
 
-            ds().userData[msg.sender] = userData.decreaseNumLocked(tokenIds.length);
+            ds().userData[user] = userData.decreaseNumLocked(tokenIds.length);
         }
     }
 
@@ -69,8 +69,8 @@ abstract contract ERC721MStaking is ERC721MLockable {
         }
     }
 
-    // @note dangerous claimReward
-    function _claimReward(address user) internal virtual returns (uint256) {
+    // @note does not set userData
+    function _claimReward(address user) private returns (uint256) {
         uint256 reward = pendingReward(user);
 
         token.mint(user, reward);

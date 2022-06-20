@@ -31,8 +31,9 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
         _sendMessageToChild(abi.encode(true, to, tokenIds));
     }
 
-    // @note this method assumes L1 state as the source of truth
-    // messages are always only pushed L1 -> L2 without knowing state on L2
+    // @note using `_unlockAndTransmit` is simple and easy
+    // this assumes L1 state as the source of truth
+    // messages are always pushed L1 -> L2 without knowing state on L2
     function _unlockAndTransmit(address from, uint256[] calldata tokenIds) internal {
         unchecked {
             for (uint256 i; i < tokenIds.length; ++i) _unlock(from, tokenIds[i]);
@@ -41,20 +42,21 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
         _sendMessageToChild(abi.encode(false, from, tokenIds));
     }
 
-    // // correct way to do it: validate ERC721 lock on L2 first, then unlock on L1
-    // function unlock(bytes calldata inputData) public virtual {
-    //     bytes memory message = _validateAndExtractMessage(inputData);
+    // @note using `_unlockWithProof` is the 'correct' way of transferring L2 -> L1
+    // validate ERC721 lock on L2 first, then unlock on L1 with tx inclusion proof
+    function _unlockWithProof(bytes calldata inputData) public virtual {
+        bytes memory message = _validateAndExtractMessage(inputData);
 
-    //     (address from, address to, uint256[] memory tokenIds) = abi.decode(message, (address, address, uint256));
+        (address from, uint256[] memory tokenIds) = abi.decode(message, (address, uint256[]));
 
-    //     uint256 tokenIdsLength = tokenIds.length;
+        uint256 length = tokenIds.length;
 
-    //     unchecked {
-    //         for (uint256 i; i < tokenIdsLength; ++i) _unlock(from, to, tokenIds[i]);
-    //     }
-    // }
+        unchecked {
+            for (uint256 i; i < length; ++i) _unlock(from, tokenIds[i]);
+        }
+    }
 
-    // we don't process any messages from L2
+    // don't need this
     function _processMessageFromChild(bytes memory) internal pure override {
         revert Disabled();
     }
