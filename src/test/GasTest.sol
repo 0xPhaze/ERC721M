@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {Vm} from "forge-std/Vm.sol";
+import "forge-std/Test.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 import {MockERC721A} from "./mocks/MockERC721A.sol";
-import {MockERC721MLockable} from "./mocks/MockERC721MLockable.sol";
+import {MockERC721MStaking, IERC20} from "./mocks/MockERC721MStaking.sol";
 
-import {ERC721AStaking} from "./lib/ERC721AStaking.sol";
+import {ERC721AStakingToken} from "./lib/ERC721AStakingToken.sol";
+import "./lib/ArrayUtils.sol";
 
-contract GasTest is DSTestPlus {
-    Vm vm = Vm(HEVM_ADDRESS);
+contract StakingStakingGasTest is Test {
+    using ArrayUtils for *;
 
     address alice = address(0x101);
     address bob = address(0x102);
@@ -18,17 +19,17 @@ contract GasTest is DSTestPlus {
     address tester = address(this);
 
     MockERC721A erc721a;
-    MockERC721MLockable erc721m;
+    MockERC721MStaking erc721m;
 
-    ERC721AStaking erc721aStaking;
-
-    uint256[] ids_1 = [1];
-    uint256[] ids_5 = [1, 2, 3, 4, 5];
+    MockERC20 erc721mToken;
+    ERC721AStakingToken erc721aStaking;
 
     function setUp() public {
-        erc721a = new MockERC721A("Token", "TKN", 1, 30, 10);
-        erc721m = new MockERC721MLockable("Token", "TKN", 1, 30, 10);
-        erc721aStaking = new ERC721AStaking(erc721a);
+        erc721a = new MockERC721A("Token", "TKN");
+        erc721aStaking = new ERC721AStakingToken(erc721a);
+
+        erc721mToken = new MockERC20("Token", "TKN", 18);
+        erc721m = new MockERC721MStaking("Token", "TKN", IERC20(address(erc721mToken)));
 
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
@@ -37,7 +38,8 @@ contract GasTest is DSTestPlus {
         vm.label(tester, "TestContract");
         vm.label(address(erc721a), "ERC721A");
         vm.label(address(erc721m), "ERC721M");
-        vm.label(address(erc721aStaking), "ERC721AStaking");
+        vm.label(address(erc721mToken), "ERC721MToken");
+        vm.label(address(erc721aStaking), "ERC721AStakingToken");
 
         erc721a.mint(tester, 5);
         erc721m.mint(tester, 5);
@@ -56,10 +58,6 @@ contract GasTest is DSTestPlus {
         erc721a.setApprovalForAll(tester, true);
         erc721m.setApprovalForAll(tester, true);
         vm.stopPrank();
-
-        // touch
-        ids_1;
-        ids_5;
     }
 
     /* ------------- mint() ------------- */
@@ -82,24 +80,23 @@ contract GasTest is DSTestPlus {
 
     /* ------------- stake() ------------- */
 
+    // debatable whether approval tx should be considered in gas comparison
     function test_stake1_ERC721A() public {
-        // debatable whether approval tx should be considered in gas comparison
         erc721a.setApprovalForAll(address(erc721aStaking), true);
-
-        erc721aStaking.stake(ids_1);
-    }
-
-    function test_stake1_ERC721M() public {
-        erc721m.stake(ids_1);
+        erc721aStaking.stake([1].toMemory());
     }
 
     function test_stake5_ERC721A() public {
         erc721a.setApprovalForAll(address(erc721aStaking), true);
-        erc721aStaking.stake(ids_5);
+        erc721aStaking.stake([1, 2, 3, 4, 5].toMemory());
+    }
+
+    function test_stake1_ERC721M() public {
+        erc721m.stake([1].toMemory());
     }
 
     function test_stake5_ERC721M() public {
-        erc721m.stake(ids_5);
+        erc721m.stake([1, 2, 3, 4, 5].toMemory());
     }
 
     /* ------------- mintAndStake() ------------- */
@@ -107,46 +104,20 @@ contract GasTest is DSTestPlus {
     function test_mintAndStake1_ERC721A() public {
         erc721a.mint(tester, 1);
         erc721a.setApprovalForAll(address(erc721aStaking), true);
-        erc721aStaking.stake(ids_1);
+        erc721aStaking.stake([1].toMemory());
+    }
+
+    function test_mintAndStake5_ERC721A() public {
+        erc721a.mint(tester, 5);
+        erc721a.setApprovalForAll(address(erc721aStaking), true);
+        erc721aStaking.stake([1, 2, 3, 4, 5].toMemory());
     }
 
     function test_mintAndStake1_ERC721M() public {
         erc721m.mintAndStake(tester, 1);
     }
 
-    function test_mintAndStake5_ERC721A() public {
-        erc721a.mint(tester, 5);
-        erc721a.setApprovalForAll(address(erc721aStaking), true);
-        erc721aStaking.stake(ids_5);
-    }
-
     function test_mintAndStake5_ERC721M() public {
         erc721m.mintAndStake(tester, 5);
-    }
-
-    /* ------------- transfer() ------------- */
-
-    function test_transferFrom1_ERC721A() public {
-        erc721a.transferFrom(tester, bob, 1);
-    }
-
-    function test_transferFrom1_ERC721M() public {
-        erc721m.transferFrom(tester, bob, 1);
-    }
-
-    function test_transferFrom5_ERC721A() public {
-        erc721a.transferFrom(tester, bob, 1);
-        erc721a.transferFrom(bob, alice, 1);
-        erc721a.transferFrom(alice, chris, 1);
-        erc721a.transferFrom(chris, bob, 1);
-        erc721a.transferFrom(bob, alice, 1);
-    }
-
-    function test_transferFrom5_ERC721M() public {
-        erc721m.transferFrom(tester, bob, 1);
-        erc721m.transferFrom(bob, alice, 1);
-        erc721m.transferFrom(alice, chris, 1);
-        erc721m.transferFrom(chris, bob, 1);
-        erc721m.transferFrom(bob, alice, 1);
     }
 }

@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {FxBaseRootTunnel} from "../../../lib/fx-portal/contracts/tunnel/FxBaseRootTunnel.sol";
+import {FxBaseRootTunnel} from "fx-portal/tunnel/FxBaseRootTunnel.sol";
 
 import "../ERC721MLockable.sol";
 
 error Disabled();
 
 abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
-    // event FxUnlockERC721Batch(address indexed from, uint256[] tokenIds);
-    // event FxLockERC721Batch(address indexed to, uint256[] tokenIds);
-
     /* ------------- Internal ------------- */
 
     function _mintLockedAndTransmit(address to, uint256 quantity) internal {
-        uint256 startTokenId = startingIndex + totalSupply;
+        uint256 startTokenId = startingIndex + ds().totalSupply;
 
         _mintAndLock(to, quantity, true);
 
@@ -24,8 +21,6 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
         }
 
         _sendMessageToChild(abi.encode(true, to, tokenIds));
-
-        // emit FxLockERC721Batch(to, tokenIds);
     }
 
     function _lockAndTransmit(address to, uint256[] calldata tokenIds) internal {
@@ -34,19 +29,16 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
         }
 
         _sendMessageToChild(abi.encode(true, to, tokenIds));
-
-        // emit FxLockERC721Batch(to, tokenIds);
     }
 
-    // cheap/simple way: always push messages from L1 -> L2 without verifying state on L2
+    // @note this method assumes L1 state as the source of truth
+    // messages are always only pushed L1 -> L2 without knowing state on L2
     function _unlockAndTransmit(address from, uint256[] calldata tokenIds) internal {
         unchecked {
             for (uint256 i; i < tokenIds.length; ++i) _unlock(from, tokenIds[i]);
         }
 
         _sendMessageToChild(abi.encode(false, from, tokenIds));
-
-        // emit FxUnlockERC721Batch(from, tokenIds);
     }
 
     // // correct way to do it: validate ERC721 lock on L2 first, then unlock on L1
@@ -62,6 +54,7 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
     //     }
     // }
 
+    // we don't process any messages from L2
     function _processMessageFromChild(bytes memory) internal pure override {
         revert Disabled();
     }

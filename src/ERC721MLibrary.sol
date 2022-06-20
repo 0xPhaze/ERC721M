@@ -32,28 +32,44 @@ library UserDataOps {
         }
     }
 
-    // function numLocked(uint256 userData) internal pure returns (uint256) {
-    //     return (userData >> 120) & 0xFF;
+    /// used in extensions
+
+    /* ------------- numLocked: [40, 60) ------------- */
+
+    function numLocked(uint256 userData) internal pure returns (uint256) {
+        return (userData >> 40) & 0xFFFFF;
+    }
+
+    function increaseNumLocked(uint256 userData, uint256 amount) internal pure returns (uint256) {
+        unchecked {
+            return userData + (amount << 40);
+        }
+    }
+
+    function decreaseNumLocked(uint256 userData, uint256 amount) internal pure returns (uint256) {
+        unchecked {
+            return userData - (amount << 40);
+        }
+    }
+
+    /* ------------- lockStart: [60, 100) ------------- */
+
+    function lockStart(uint256 userData) internal pure returns (uint256) {
+        return (userData >> 60) & 0xFFFFFFFFFF;
+    }
+
+    function setLockStart(uint256 userData, uint256 timestamp) internal pure returns (uint256) {
+        return (userData & ~uint256(0xFFFFFFFFFF << 60)) | (timestamp << 60);
+    }
+
+    // /* ------------- aux: [100, 256) ------------- */
+
+    // function aux(uint256 userData) internal pure returns (uint256) {
+    //     return (userData >> 100) & 0xFFFFFFFFFF;
     // }
 
-    // function increaseNumLocked(uint256 userData, uint256 amount) internal pure returns (uint256) {
-    //     unchecked {
-    //         return userData + (amount << 120);
-    //     }
-    // }
-
-    // function decreaseNumLocked(uint256 userData, uint256 amount) internal pure returns (uint256) {
-    //     unchecked {
-    //         return userData - (amount << 120);
-    //     }
-    // }
-
-    // function lockStart(uint256 userData) internal pure returns (uint256) {
-    //     return (userData >> 40) & 0xFFFFFFFFFF;
-    // }
-
-    // function setLockStart(uint256 userData, uint256 timestamp) internal pure returns (uint256) {
-    //     return (userData & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000000000FFFFFFFFFF) | (timestamp << 40);
+    // function setAux(uint256 userData, uint256 aux_) internal pure returns (uint256) {
+    //     return (userData & ~((uint256(1) << 100) - 1)) | (aux_ << 100);
     // }
 }
 

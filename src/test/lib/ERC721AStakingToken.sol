@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
 import {ERC721A} from "ERC721A/ERC721A.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 
 error IncorrectOwner();
 
-contract ERC721AStaking {
+/// Minimal ERC721 staking contract
+/// Combines ERC20 Token to avoid external calls during claim
+/// @author phaze (https://github.com/0xPhaze/ERC721M)
+contract ERC721AStakingToken is ERC20("Token", "TKN", 18) {
     struct StakeData {
         uint128 numStaked;
         uint128 lastClaimed;
     }
-
-    uint256 constant rewardPerDay = 1e18;
 
     mapping(uint256 => address) public owners;
     mapping(address => StakeData) public stakeData;
@@ -29,11 +30,10 @@ contract ERC721AStaking {
         unchecked {
             claimReward();
 
-            uint256 tokenId;
             for (uint256 i; i < tokenIds.length; ++i) {
-                tokenId = tokenIds[i];
-                nft.transferFrom(msg.sender, address(this), tokenId);
-                owners[tokenId] = msg.sender;
+                nft.transferFrom(msg.sender, address(this), tokenIds[i]);
+
+                owners[tokenIds[i]] = msg.sender;
             }
 
             stakeData[msg.sender].numStaked += uint128(tokenIds.length);
@@ -44,14 +44,12 @@ contract ERC721AStaking {
         unchecked {
             claimReward();
 
-            uint256 tokenId;
             for (uint256 i; i < tokenIds.length; ++i) {
-                tokenId = tokenIds[i];
+                if (owners[tokenIds[i]] != msg.sender) revert IncorrectOwner();
 
-                if (owners[tokenId] != msg.sender) revert IncorrectOwner();
+                delete owners[tokenIds[i]];
 
-                delete owners[tokenId];
-                nft.transferFrom(address(this), msg.sender, tokenId);
+                nft.transferFrom(address(this), msg.sender, tokenIds[i]);
             }
 
             stakeData[msg.sender].numStaked -= uint128(tokenIds.length);
@@ -60,7 +58,9 @@ contract ERC721AStaking {
 
     function claimReward() public {
         uint256 reward = pendingReward(msg.sender);
-        // token.mint(msg.sender, reward);
+
+        _mint(msg.sender, reward);
+
         stakeData[msg.sender].lastClaimed = uint128(block.timestamp);
     }
 
@@ -72,15 +72,7 @@ contract ERC721AStaking {
         }
     }
 
-    function numStaked(address user) external view returns (uint256) {
+    function numStaked(address user) public view returns (uint256) {
         return stakeData[user].numStaked;
-    }
-
-    function numOwned(address user) external view returns (uint256) {
-        return nft.balanceOf(user) + stakeData[user].numStaked;
-    }
-
-    function totalNumStaked() external view returns (uint256) {
-        return nft.balanceOf(address(this));
     }
 }
