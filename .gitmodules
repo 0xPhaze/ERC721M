@@ -13,3 +13,6 @@
 [submodule "lib/UDS"]
 	path = lib/UDS
 	url = https://github.com/0xphaze/UDS
+[submodule "lib/contracts"]
+	path = lib/fx-portal
+	url = https://github.com/fx-portal/contracts
