@@ -6,7 +6,7 @@
         {
             "label": "test",
             "type": "shell",
-            "command": "forge test",
+            "command": "forge test -vvv",
             "group": {
 				"kind": "test",
 				"isDefault": true

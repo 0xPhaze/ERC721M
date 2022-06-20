@@ -1,22 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
-import {ERC721MLockable} from "../../ERC721MLockable.sol";
+import "../../ERC721MLockable.sol";
 
 contract MockERC721MLockable is ERC721MLockable {
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 collectionSize_
-    ) ERC721MLockable(name, symbol, collectionSize_) {}
+    string public override name;
+    string public override symbol;
 
-    function tokenURI(uint256) public pure virtual override returns (string memory) {}
-
-    function mint(address to, uint256 quantity) public virtual {
-        _mintAndLock(to, quantity, false);
+    constructor(string memory name_, string memory symbol_) {
+        name = name_;
+        symbol = symbol_;
     }
 
-    function mintAndStake(address to, uint256 quantity) public virtual {
+    function mint(address to, uint256 quantity) public {
+        _mint(to, quantity);
+    }
+
+    function mintAndLock(address to, uint256 quantity) public {
         _mintAndLock(to, quantity, true);
     }
+
+    function lock(uint256[] calldata tokenIds) public {
+        for (uint256 i; i < tokenIds.length; ++i) _lock(msg.sender, tokenIds[i]);
+    }
+
+    function unlock(uint256[] calldata tokenIds) public {
+        for (uint256 i; i < tokenIds.length; ++i) _unlock(msg.sender, tokenIds[i]);
+    }
+
+    function tokenURI(uint256) public pure override returns (string memory) {}
 }
