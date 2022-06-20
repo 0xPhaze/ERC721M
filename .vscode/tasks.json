@@ -6,8 +6,8 @@
         {
             "label": "test",
             "type": "shell",
-            // "command": "forge test -vvv --no-match-contract StakingGasTest",
-            "command": "forge snapshot --match-contract StakingGasTest",
+            "command": "forge test -vvv --no-match-contract StakingGasTest",
+            // "command": "forge snapshot --match-contract StakingGasTest",
             "group": {
 				"kind": "test",
 				"isDefault": true

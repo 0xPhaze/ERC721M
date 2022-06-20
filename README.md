@@ -24,6 +24,8 @@ Implementation and tests are preliminary.
 This should not be used in production until sufficiently tested.
 I am not responsible for any damage caused using this contract.
 
+## Gas comparison to using ERC721A for staking
+
 | Function      | Gas ERC721AStaking | Gas ERC721MStaking |
 | :------------ | :----------------: | :----------------: |
 | mintAndStake1 |       180531       |       44105        |
@@ -31,6 +33,7 @@ I am not responsible for any damage caused using this contract.
 | stake1        |       150021       |       56418        |
 | stake5        |       336684       |       149163       |
 
+The tests and setup can be reviewed [here](./src/test/StakingGasTest.sol)
 
 Check [gas snapshot](.gas-snapshot) for more recent results.
 
