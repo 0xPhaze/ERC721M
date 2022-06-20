@@ -37,6 +37,10 @@ error TransferToZeroAddress();
 error TokenIdLocked();
 error TokenIdUnlocked();
 
+/// @notice ERC721A modified implementation that allows for token locking
+/// @notice Compatible with Diamond Storage
+/// @notice Integrates EIP712Permit
+/// @author phaze (https://github.com/0xPhaze/ERC721M)
 abstract contract ERC721MLockable is EIP712PermitUDS {
     using TokenDataOps for uint256;
     using UserDataOps for uint256;

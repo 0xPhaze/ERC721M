@@ -7,6 +7,8 @@ import "../ERC721MLockable.sol";
 
 error Disabled();
 
+/// @notice ERC721M FxPortal extension
+/// @author phaze (https://github.com/0xPhaze/ERC721M)
 abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
     /* ------------- Internal ------------- */
 

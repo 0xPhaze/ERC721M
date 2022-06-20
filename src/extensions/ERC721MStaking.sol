@@ -8,6 +8,8 @@ interface IERC20 {
     function mint(address to, uint256 quantity) external;
 }
 
+/// @notice ERC721M staking extension
+/// @author phaze (https://github.com/0xPhaze/ERC721M)
 abstract contract ERC721MStaking is ERC721MLockable {
     using UserDataOps for uint256;
 

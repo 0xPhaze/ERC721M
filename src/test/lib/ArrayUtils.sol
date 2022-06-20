@@ -3,7 +3,8 @@ pragma solidity ^0.8.12;
 
 import "forge-std/console.sol";
 
-/// author phaze
+/// @notice utils for array manipulation
+/// @author phaze (https://github.com/0xPhaze)
 library ArrayUtils {
     /* ------------- utils ------------- */
 

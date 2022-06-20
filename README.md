@@ -7,14 +7,17 @@ This can be applied for staking or bridgeing NFTs to other chains (see extension
 Thus far, it has the cheapest gas costs when "minting and staking" directly.
 The idea was first introduced in the [Mad Mouse Circus NFT](https://etherscan.io/address/0x3ad30c5e2985e960e89f4a28efc91ba73e104b77#code) project.
 
-src
-- [ERC721MLibrary.sol](./src/ERC721MLibrary.sol) - "Library for bitmap manipulation"
-- [ERC721MLockable.sol](./src/ERC721MLockable.sol) - "ERC721A-like with locking functionality using Diamond Storage"
+ERC721MLockable is further compatible with the EIP-2535 Diamond Storage pattern
+which is helpful when working with [upgradeable contracts](https://github.com/0xPhaze/UDS).
+
+Contracts
+- [ERC721MLibrary.sol](./src/ERC721MLibrary.sol) - Library for bitmap manipulation
+- [ERC721MLockable.sol](./src/ERC721MLockable.sol) - ERC721A-like with locking functionality using Diamond Storage
 - examples
-  -   [ERC721MExample.sol](./src/example/ERC721MExample.sol)
+  -   [ERC721MExample.sol](./src/example/ERC721MExample.sol) - An example contract that could be used for a ERC721M that allows staking
 - extensions
-   -  [ERC721MStaking.sol](./src/extensions/ERC721MStaking.sol)
-   -  [FxERC721MLockableRoot.sol](./src/extensions/FxERC721MLockableRoot.sol)
+   -  [ERC721MStaking.sol](./src/extensions/ERC721MStaking.sol) - ERC721M staking extension, allows minting an ERC20 token as reward
+   -  [FxERC721MLockableRoot.sol](./src/extensions/FxERC721MLockableRoot.sol) - FxPortal extension, allows NFT to be transferred to Polygon
 - test
 
 Implementation and tests are preliminary.

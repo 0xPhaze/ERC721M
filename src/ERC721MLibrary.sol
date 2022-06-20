@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+/// @notice Library used for bitmap manipulation for ERC721M
+/// @author phaze (https://github.com/0xPhaze/ERC721M)
 library UserDataOps {
     /* ------------- balance: [0, 20) ------------- */
 

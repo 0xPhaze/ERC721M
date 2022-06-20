@@ -7,9 +7,9 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 error IncorrectOwner();
 
 /// Minimal ERC721 staking contract
-/// Combines ERC20 Token to avoid external calls during claim
+/// Combined ERC20 Token to avoid external calls during claim
 /// @author phaze (https://github.com/0xPhaze/ERC721M)
-contract ERC721AStakingToken is ERC20("Token", "TKN", 18) {
+contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
     struct StakeData {
         uint128 numStaked;
         uint128 lastClaimed;

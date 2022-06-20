@@ -7,7 +7,7 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {MockERC721A} from "./mocks/MockERC721A.sol";
 import {MockERC721MStaking, IERC20} from "./mocks/MockERC721MStaking.sol";
 
-import {ERC721AStakingToken} from "./lib/ERC721AStakingToken.sol";
+import {ERC721StakingToken} from "./lib/ERC721StakingToken.sol";
 import "./lib/ArrayUtils.sol";
 
 contract StakingStakingGasTest is Test {
@@ -22,11 +22,11 @@ contract StakingStakingGasTest is Test {
     MockERC721MStaking erc721m;
 
     MockERC20 erc721mToken;
-    ERC721AStakingToken erc721aStaking;
+    ERC721StakingToken erc721aStaking;
 
     function setUp() public {
         erc721a = new MockERC721A("Token", "TKN");
-        erc721aStaking = new ERC721AStakingToken(erc721a);
+        erc721aStaking = new ERC721StakingToken(erc721a);
 
         erc721mToken = new MockERC20("Token", "TKN", 18);
         erc721m = new MockERC721MStaking("Token", "TKN", IERC20(address(erc721mToken)));
@@ -39,7 +39,7 @@ contract StakingStakingGasTest is Test {
         vm.label(address(erc721a), "ERC721A");
         vm.label(address(erc721m), "ERC721M");
         vm.label(address(erc721mToken), "ERC721MToken");
-        vm.label(address(erc721aStaking), "ERC721AStakingToken");
+        vm.label(address(erc721aStaking), "ERC721StakingToken");
 
         erc721a.mint(tester, 5);
         erc721m.mint(tester, 5);

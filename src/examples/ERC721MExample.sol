@@ -78,6 +78,14 @@ contract GMC is ERC721MStaking, Owned {
         }
     }
 
+    function stake(uint256[] calldata tokenIds) public {
+        _stake(msg.sender, tokenIds);
+    }
+
+    function unstake(uint256[] calldata tokenIds) public {
+        _unstake(msg.sender, tokenIds);
+    }
+
     /* ------------- Private ------------- */
 
     function validSignature(bytes calldata signature, uint256 limit) private view returns (bool) {

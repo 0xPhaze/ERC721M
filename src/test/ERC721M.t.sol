@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-// import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-// import {Vm} from "forge-std/Vm.sol";
-// import {console} from "forge-std/console.sol";
 import "forge-std/Test.sol";
 
 import "./mocks/MockERC721MLockable.sol";
