@@ -146,7 +146,7 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
 
     /* ------------- View ------------- */
 
-    function totalSupply() external view returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return ds().totalSupply;
     }
 

@@ -43,21 +43,6 @@ contract StakingStakingGasTest is Test {
 
         erc721a.mint(tester, 5);
         erc721m.mint(tester, 5);
-
-        vm.startPrank(alice);
-        erc721a.setApprovalForAll(tester, true);
-        erc721m.setApprovalForAll(tester, true);
-        vm.stopPrank();
-
-        vm.startPrank(bob);
-        erc721a.setApprovalForAll(tester, true);
-        erc721m.setApprovalForAll(tester, true);
-        vm.stopPrank();
-
-        vm.startPrank(chris);
-        erc721a.setApprovalForAll(tester, true);
-        erc721m.setApprovalForAll(tester, true);
-        vm.stopPrank();
     }
 
     /* ------------- mint() ------------- */

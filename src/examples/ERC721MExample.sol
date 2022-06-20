@@ -6,19 +6,22 @@ pragma solidity ^0.8.0;
 // import "@openzeppelin/contracts/access/AccessControl.sol";
 // import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
+import "openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "solmate/auth/Owned.sol";
+import "solmate/utils/LibString.sol";
 
-import "../ERC721MLockable.sol";
+import "../extensions/ERC721MStaking.sol";
 
 error ExceedsLimit();
 error IncorrectValue();
+error NonexistentToken();
 error InvalidSignature();
 error WhitelistNotActive();
 error PublicSaleNotActive();
 error SignatureExceedsLimit();
 error ContractCallNotAllowed();
 
-contract GMC is ERC721MLockable, Owned {
+contract GMC is ERC721MStaking, Owned {
     using ECDSA for bytes32;
     using Strings for uint256;
 
@@ -26,26 +29,22 @@ contract GMC is ERC721MLockable, Owned {
 
     bool public publicSaleActive;
 
+    string public constant override name = "My NFT";
+    string public constant override symbol = "NFT";
+
     string private baseURI;
-    string private unrevealedURI = "ipfs://QmRuQYxmdzqfVfy8ZhZNTvXsmbN9yLnBFPDeczFvWUS2HU/";
+    string private unrevealedURI = "ipfs://QSOZMCWOM/";
 
     uint256 private constant MAX_SUPPLY = 5555;
     uint256 private constant MAX_PER_WALLET = 20;
 
-    uint256 private constant price = 0.01 ether;
+    uint256 private constant price = 0.02 ether;
     uint256 private constant whitelistPrice = 0.01 ether;
     uint256 private constant PURCHASE_LIMIT = 10;
 
-    bytes32 private constant BRIDGE_AUTHORITY = keccak256("BRIDGE_AUTHORITY");
+    address private signerAddress = address(0xb0b);
 
-    address private signerAddress = 0x68442589f40E8Fc3a9679dE62884c85C6E524888;
-
-    mapping(address => uint256) public numMinted;
-
-    constructor(address _checkpointManager, address _fxRoot)
-        ERC721MLockable("GMC", "GMC", MAX_SUPPLY)
-        FxBaseRootTunnel(_checkpointManager, _fxRoot)
-    {}
+    constructor(IERC20 token) ERC721MStaking(token) Owned(msg.sender) {}
 
     /* ------------- External ------------- */
 
@@ -54,21 +53,11 @@ contract GMC is ERC721MLockable, Owned {
             if (!publicSaleActive) revert PublicSaleNotActive();
             if (PURCHASE_LIMIT < quantity) revert ExceedsLimit();
             if (msg.value != price * quantity) revert IncorrectValue();
-            if ((numMinted[msg.sender] += quantity) > MAX_PER_WALLET) revert ExceedsLimit();
+            if (totalSupply() + quantity > MAX_SUPPLY) revert ExceedsLimit();
+            if (numMinted(msg.sender) + quantity > MAX_PER_WALLET) revert ExceedsLimit();
 
-            if (lock) _mintLockedAndTransmit(msg.sender, quantity);
+            if (lock) _mintAndStake(msg.sender, quantity);
             else _mint(msg.sender, quantity);
-        }
-    }
-
-    function mintAndTransmit(address to, uint256 quantity) external payable onlyEOA {
-        unchecked {
-            if (!publicSaleActive) revert PublicSaleNotActive();
-            if (PURCHASE_LIMIT < quantity) revert ExceedsLimit();
-            if (msg.value != price * quantity) revert IncorrectValue();
-            if ((numMinted[msg.sender] += quantity) > MAX_PER_WALLET) revert ExceedsLimit();
-
-            _mintLockedAndTransmit(msg.sender, quantity);
         }
     }
 
@@ -81,49 +70,12 @@ contract GMC is ERC721MLockable, Owned {
         unchecked {
             if (!validSignature(signature, limit)) revert InvalidSignature();
             if (msg.value != whitelistPrice * quantity) revert IncorrectValue();
-            if ((numMinted[msg.sender] += quantity) > limit) revert ExceedsLimit();
+            if (totalSupply() + quantity > MAX_SUPPLY) revert ExceedsLimit();
+            if (numMinted(msg.sender) + quantity > MAX_PER_WALLET) revert ExceedsLimit();
 
-            if (lock) _mintLockedAndTransmit(msg.sender, quantity);
+            if (lock) _mintAndStake(msg.sender, quantity);
             else _mint(msg.sender, quantity);
         }
-    }
-
-    function lockAndTransmit(uint256[] calldata tokenIds) external payable {
-        _lockAndTransmit(msg.sender, msg.sender, tokenIds);
-    }
-
-    function lockAndTransmit(address to, uint256[] calldata tokenIds) external payable {
-        _lockAndTransmit(msg.sender, to, tokenIds);
-    }
-
-    // // @note necessary?
-    // // could restrict with approval
-    // function lockAndTransmitAuthority(
-    //     address from,
-    //     address to,
-    //     uint256[] calldata tokenIds
-    // ) external payable onlyRole(BRIDGE_AUTHORITY) {
-    //     _lockAndTransmit(from, to, tokenIds);
-    // }
-
-    function unlockAndTransmit(uint256[] calldata tokenIds) external payable {
-        _unlockAndTransmit(msg.sender, msg.sender, tokenIds);
-    }
-
-    function unlockAndTransmit(address to, uint256[] calldata tokenIds) external payable {
-        _unlockAndTransmit(msg.sender, to, tokenIds);
-    }
-
-    function unlockAndTransmit(
-        address from,
-        address to,
-        uint256[] calldata tokenIds
-    ) external payable onlyRole(BRIDGE_AUTHORITY) {
-        _unlockAndTransmit(from, to, tokenIds);
-    }
-
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721MLockable, AccessControl) returns (bool) {
-        return ERC721MLockable.supportsInterface(interfaceId);
     }
 
     /* ------------- Private ------------- */
@@ -152,25 +104,20 @@ contract GMC is ERC721MLockable, Owned {
         signerAddress = _address;
     }
 
-    function giftMint(
+    function airdrop(
         address[] calldata users,
         uint256[] calldata amounts,
         bool locked
     ) external onlyOwner {
         unchecked {
-            if (locked) for (uint256 i; i < users.length; ++i) _mintLockedAndTransmit(users[i], amounts[i]);
+            if (locked) for (uint256 i; i < users.length; ++i) _mintAndStake(users[i], amounts[i]);
             else for (uint256 i; i < users.length; ++i) _mint(users[i], amounts[i]);
         }
     }
 
     function withdraw() external onlyOwner {
         uint256 balance = address(this).balance;
-        payable(msg.sender).transfer(balance);
-    }
-
-    function recoverToken(IERC20 token) external onlyOwner {
-        uint256 balance = token.balanceOf(address(this));
-        token.transfer(msg.sender, balance);
+        payable(msg.sender).transfer(balance); // don't use this for multisigs like gnosis
     }
 
     /* ------------- Modifier ------------- */

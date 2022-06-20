@@ -32,8 +32,9 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
     }
 
     // @note using `_unlockAndTransmit` is simple and easy
-    // this assumes L1 state as the source of truth
+    // this assumes L1 state as the single source of truth
     // messages are always pushed L1 -> L2 without knowing state on L2
+    // this means that NFTs should not be allowed to be traded/sold on L2
     function _unlockAndTransmit(address from, uint256[] calldata tokenIds) internal {
         unchecked {
             for (uint256 i; i < tokenIds.length; ++i) _unlock(from, tokenIds[i]);
@@ -42,8 +43,9 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
         _sendMessageToChild(abi.encode(false, from, tokenIds));
     }
 
-    // @note using `_unlockWithProof` is the 'correct' way of transferring L2 -> L1
+    // @note using `_unlockWithProof` is the 'correct' way for transmitting messages L2 -> L1
     // validate ERC721 lock on L2 first, then unlock on L1 with tx inclusion proof
+    // NFTs can be traded/sold on L2 if adapted to transfer from current owner to new `from`
     function _unlockWithProof(bytes calldata inputData) public virtual {
         bytes memory message = _validateAndExtractMessage(inputData);
 
@@ -56,7 +58,7 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
         }
     }
 
-    // don't need this
+    // not used
     function _processMessageFromChild(bytes memory) internal pure override {
         revert Disabled();
     }
