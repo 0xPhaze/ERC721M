@@ -1,16 +1,14 @@
 # ERC721M (WIP)
 
-```ml
 src
-├── ERC721M.sol - "Written using structs as seen in ERC721A"
-├── ERC721MMC.sol - "Written using uint256 bitmaps (cheaper) as used by Mad Mouse Circus"
-└── ERC721MMCLibrary.sol "Library for bitmap manipulation"
-```
-
-src
-├── [ERC721M.sol](.src/ERC721MLockable.sol) - "Written using structs as seen in ERC721A"
-├── ERC721MMC.sol - "Written using uint256 bitmaps (cheaper) as used by Mad Mouse Circus"
-└── ERC721MMCLibrary.sol "Library for bitmap manipulation"
+- [ERC721MLibrary.sol](./src/ERC721MLibrary.sol) - "Library for bitmap manipulation"
+- [ERC721MLockable.sol](./src/ERC721MLockable.sol) - "ERC721A-like with locking functionality"
+- examples
+  -   [ERC721MExample.sol](./src/ERC721MExample.sol)
+- extensions
+   -  [ERC721MStaking.sol](./src/ERC721MStaking.sol)
+   -  [FxERC721MLockableRoot.sol](./src/FxERC721MLockableRoot.sol)
+- test
 
 [ERC721M](https://lovethewired.github.io/blog/2022/madmouse) allows for cheap and efficient staking.
 Thus far, it has the cheapest gas costs on "minting and staking" directly.
