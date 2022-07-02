@@ -9,7 +9,7 @@ error Disabled();
 
 /// @notice ERC721M FxPortal extension
 /// @author phaze (https://github.com/0xPhaze/ERC721M)
-abstract contract FxERC721MRoot is FxBaseRootTunnel, ERC721M {
+abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721M {
     /* ------------- Internal ------------- */
 
     function _mintLockedAndTransmit(address to, uint256 quantity) internal {

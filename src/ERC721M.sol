@@ -195,9 +195,10 @@ abstract contract ERC721M is EIP712PermitUDS {
         if (balance == 0) return ids;
 
         uint256 count;
+        uint256 endIndex = _nextTokenId();
 
         unchecked {
-            for (uint256 i = startingIndex; i < s().totalSupply + startingIndex; ++i) {
+            for (uint256 i = startingIndex; i < endIndex; ++i) {
                 if (user == _tokenDataOf(i).trueOwner()) {
                     ids[count++] = i;
                     if (balance == count) return ids;
@@ -209,22 +210,23 @@ abstract contract ERC721M is EIP712PermitUDS {
     }
 
     function totalNumLocked() external view returns (uint256) {
+        uint256 count;
+        uint256 endIndex = _nextTokenId();
+
         unchecked {
-            uint256 count;
-            for (uint256 i = startingIndex; i < startingIndex + s().totalSupply; ++i) {
-                if (_tokenDataOf(i).locked()) ++count;
-            }
-            return count;
+            for (uint256 i = startingIndex; i < endIndex; ++i) if (_tokenDataOf(i).locked()) ++count;
         }
+
+        return count;
     }
 
     /* ------------- Internal ------------- */
 
     function _exists(uint256 tokenId) internal view returns (bool) {
-        return startingIndex <= tokenId && tokenId < startingIndex + s().totalSupply;
+        return startingIndex <= tokenId && tokenId < _nextTokenId();
     }
 
-    function _tokenDataOf(uint256 tokenId) public view returns (uint256) {
+    function _tokenDataOf(uint256 tokenId) internal view returns (uint256) {
         if (!_exists(tokenId)) revert NonexistentToken();
 
         unchecked {
@@ -239,9 +241,13 @@ abstract contract ERC721M is EIP712PermitUDS {
         return 0;
     }
 
-    function _ensureTokenDataSet(uint256 tokenId, uint256 tokenData) private {
+    function _ensureTokenDataSet(uint256 tokenId, uint256 tokenData) internal {
         if (!tokenData.nextTokenDataSet() && s().tokenData[tokenId] == 0 && _exists(tokenId))
             s().tokenData[tokenId] = tokenData;
+    }
+
+    function _nextTokenId() internal view returns (uint256) {
+        return startingIndex + s().totalSupply;
     }
 
     function _mint(address to, uint256 quantity) internal {
