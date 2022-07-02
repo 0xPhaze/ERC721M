@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 
 import "./mocks/MockERC721MLockable.sol";
-import "./lib/ArrayUtils.sol";
+import "ArrayUtils/ArrayUtils.sol";
 import "../ERC721MLibrary.sol";
 
 contract ERC721MLockableTest is Test {

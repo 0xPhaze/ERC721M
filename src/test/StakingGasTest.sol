@@ -8,7 +8,7 @@ import {MockERC721A} from "./mocks/MockERC721A.sol";
 import {MockERC721MStaking, IERC20} from "./mocks/MockERC721MStaking.sol";
 
 import {ERC721StakingToken} from "./lib/ERC721StakingToken.sol";
-import "./lib/ArrayUtils.sol";
+import "ArrayUtils/ArrayUtils.sol";
 
 contract StakingGasTest is Test {
     using ArrayUtils for *;
