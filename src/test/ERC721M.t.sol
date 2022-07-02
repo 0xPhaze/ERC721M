@@ -3,26 +3,26 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
-import "./mocks/MockERC721MLockable.sol";
+import "./mocks/MockERC721M.sol";
 import "ArrayUtils/ArrayUtils.sol";
 import "../ERC721MLibrary.sol";
 
-contract ERC721MLockableTest is Test {
+contract ERC721MTest is Test {
     using ArrayUtils for *;
 
     address alice = address(0xbabe);
     address bob = address(0xb0b);
     address tester = address(this);
 
-    MockERC721MLockable token;
+    MockERC721M token;
 
     function setUp() public {
-        token = new MockERC721MLockable("Token", "TKN");
+        token = new MockERC721M("Token", "TKN");
 
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
         vm.label(tester, "Tester");
-        vm.label(address(token), "ERC721MLockable");
+        vm.label(address(token), "ERC721M");
     }
 
     /* ------------- lock() ------------- */

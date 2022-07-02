@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../ERC721MLibrary.sol";
-import {ERC721MLockable, s} from "../ERC721MLockable.sol";
+import {ERC721M, s} from "../ERC721M.sol";
 
 interface IERC20 {
     function mint(address to, uint256 quantity) external;
@@ -10,7 +10,7 @@ interface IERC20 {
 
 /// @notice ERC721M staking extension
 /// @author phaze (https://github.com/0xPhaze/ERC721M)
-abstract contract ERC721MStaking is ERC721MLockable {
+abstract contract ERC721MStaking is ERC721M {
     using UserDataOps for uint256;
 
     IERC20 public immutable token;

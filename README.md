@@ -1,6 +1,6 @@
 # ERC721M
 
-ERC721MLockable is adapted from the original ERC721M to be more general and simpler.
+ERC721MLockable (now simply ERC721M) is adapted from the original ERC721M to be more general and simpler.
 Extending the idea of ERC721A it allows for cheap and efficient locking.
 This can be applied for staking or bridgeing NFTs to other chains (see extensions).
 

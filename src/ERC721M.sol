@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./ERC721MLibrary.sol";
 import {EIP712PermitUDS} from "UDS/EIP712PermitUDS.sol";
 
-struct ERC721MLockableStorage {
+struct ERC721MStorage {
     uint256 totalSupply;
     mapping(uint256 => address) getApproved;
     mapping(address => mapping(address => bool)) isApprovedForAll;
@@ -15,7 +15,7 @@ struct ERC721MLockableStorage {
 // keccak256("diamond.storage.erc721m.lockable") == 0xacef0a52ec0e8b948b85810f48a276692a03896348e0958ead290f1909a95599;
 bytes32 constant DIAMOND_STORAGE_ERC721M_LOCKABLE = 0xacef0a52ec0e8b948b85810f48a276692a03896348e0958ead290f1909a95599;
 
-function s() pure returns (ERC721MLockableStorage storage diamondStorage) {
+function s() pure returns (ERC721MStorage storage diamondStorage) {
     assembly {
         diamondStorage.slot := DIAMOND_STORAGE_ERC721M_LOCKABLE
     }
@@ -41,7 +41,7 @@ error TokenIdUnlocked();
 /// @notice Compatible with Diamond Storage
 /// @notice Integrates EIP712Permit
 /// @author phaze (https://github.com/0xPhaze/ERC721M)
-abstract contract ERC721MLockable is EIP712PermitUDS {
+abstract contract ERC721M is EIP712PermitUDS {
     using TokenDataOps for uint256;
     using UserDataOps for uint256;
 

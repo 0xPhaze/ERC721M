@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
-import "../../ERC721MLockable.sol";
+import "../../ERC721M.sol";
 
-contract MockERC721MLockable is ERC721MLockable {
+contract MockERC721M is ERC721M {
     string public override name;
     string public override symbol;
 
