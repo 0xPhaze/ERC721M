@@ -13,7 +13,7 @@ abstract contract FxERC721MLockableRoot is FxBaseRootTunnel, ERC721MLockable {
     /* ------------- Internal ------------- */
 
     function _mintLockedAndTransmit(address to, uint256 quantity) internal {
-        uint256 startTokenId = startingIndex + ds().totalSupply;
+        uint256 startTokenId = startingIndex + s().totalSupply;
 
         _mintAndLock(to, quantity, true);
 

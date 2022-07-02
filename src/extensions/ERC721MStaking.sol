@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../ERC721MLibrary.sol";
-import {ERC721MLockable, ds} from "../ERC721MLockable.sol";
+import {ERC721MLockable, s} from "../ERC721MLockable.sol";
 
 interface IERC20 {
     function mint(address to, uint256 quantity) external;
@@ -22,13 +22,13 @@ abstract contract ERC721MStaking is ERC721MLockable {
     /* ------------- External ------------- */
 
     function claimReward() external virtual {
-        ds().userData[msg.sender] = _claimReward(msg.sender);
+        s().userData[msg.sender] = _claimReward(msg.sender);
     }
 
     /* ------------- View ------------- */
 
     function pendingReward(address user) public view virtual returns (uint256) {
-        uint256 userData = ds().userData[user];
+        uint256 userData = s().userData[user];
 
         unchecked {
             return (userData.numLocked() * 1e18 * (block.timestamp - userData.lockStart())) / (1 days);
@@ -36,7 +36,7 @@ abstract contract ERC721MStaking is ERC721MLockable {
     }
 
     function numStaked(address user) public view virtual returns (uint256) {
-        return ds().userData[user].numLocked();
+        return s().userData[user].numLocked();
     }
 
     /* ------------- Internal ------------- */
@@ -47,7 +47,7 @@ abstract contract ERC721MStaking is ERC721MLockable {
 
             for (uint256 i; i < tokenIds.length; ++i) _lock(user, tokenIds[i]);
 
-            ds().userData[user] = userData.increaseNumLocked(tokenIds.length);
+            s().userData[user] = userData.increaseNumLocked(tokenIds.length);
         }
     }
 
@@ -57,7 +57,7 @@ abstract contract ERC721MStaking is ERC721MLockable {
 
             for (uint256 i; i < tokenIds.length; ++i) _unlock(user, tokenIds[i]);
 
-            ds().userData[user] = userData.decreaseNumLocked(tokenIds.length);
+            s().userData[user] = userData.decreaseNumLocked(tokenIds.length);
         }
     }
 
@@ -67,7 +67,7 @@ abstract contract ERC721MStaking is ERC721MLockable {
 
             _mintAndLock(to, quantity, true);
 
-            ds().userData[to] = userData.increaseNumLocked(quantity);
+            s().userData[to] = userData.increaseNumLocked(quantity);
         }
     }
 
@@ -77,6 +77,6 @@ abstract contract ERC721MStaking is ERC721MLockable {
 
         token.mint(user, reward);
 
-        return ds().userData[user].setLockStart(block.timestamp);
+        return s().userData[user].setLockStart(block.timestamp);
     }
 }

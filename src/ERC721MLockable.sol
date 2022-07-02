@@ -15,7 +15,7 @@ struct ERC721MLockableStorage {
 // keccak256("diamond.storage.erc721m.lockable") == 0xacef0a52ec0e8b948b85810f48a276692a03896348e0958ead290f1909a95599;
 bytes32 constant DIAMOND_STORAGE_ERC721M_LOCKABLE = 0xacef0a52ec0e8b948b85810f48a276692a03896348e0958ead290f1909a95599;
 
-function ds() pure returns (ERC721MLockableStorage storage diamondStorage) {
+function s() pure returns (ERC721MLockableStorage storage diamondStorage) {
     assembly {
         diamondStorage.slot := DIAMOND_STORAGE_ERC721M_LOCKABLE
     }
@@ -66,15 +66,15 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
     function approve(address spender, uint256 tokenId) external {
         address owner = _tokenDataOf(tokenId).owner(warden);
 
-        if (msg.sender != owner && !ds().isApprovedForAll[owner][msg.sender]) revert CallerNotOwnerNorApproved();
+        if (msg.sender != owner && !s().isApprovedForAll[owner][msg.sender]) revert CallerNotOwnerNorApproved();
 
-        ds().getApproved[tokenId] = spender;
+        s().getApproved[tokenId] = spender;
 
         emit Approval(owner, spender, tokenId);
     }
 
     function setApprovalForAll(address operator, bool approved) external {
-        ds().isApprovedForAll[msg.sender][operator] = approved;
+        s().isApprovedForAll[msg.sender][operator] = approved;
 
         emit ApprovalForAll(msg.sender, operator, approved);
     }
@@ -90,23 +90,23 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
         uint256 tokenData = _tokenDataOf(tokenId);
 
         bool isApprovedOrOwner = (msg.sender == from ||
-            ds().isApprovedForAll[from][msg.sender] ||
-            ds().getApproved[tokenId] == msg.sender);
+            s().isApprovedForAll[from][msg.sender] ||
+            s().getApproved[tokenId] == msg.sender);
 
         if (tokenData.owner(warden) != from) revert TransferFromIncorrectOwner();
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
 
-        delete ds().getApproved[tokenId];
+        delete s().getApproved[tokenId];
 
         unchecked {
             _ensureTokenDataSet(tokenId + 1, tokenData);
         }
-        ds().tokenData[tokenId] = tokenData.setOwner(to).flagNextTokenDataSet();
+        s().tokenData[tokenId] = tokenData.setOwner(to).flagNextTokenDataSet();
         // .setLastTransfer(block.timestamp)
         // .incrementOwnerCount()
 
-        ds().userData[from] = ds().userData[from].decreaseBalance(1);
-        ds().userData[to] = ds().userData[to].increaseBalance(1);
+        s().userData[from] = s().userData[from].decreaseBalance(1);
+        s().userData[to] = s().userData[to].increaseBalance(1);
 
         emit Transfer(from, to, tokenId);
     }
@@ -140,10 +140,10 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
         uint256 deadline,
         uint8 v,
         bytes32 r,
-        bytes32 s
+        bytes32 s_
     ) public virtual {
-        if (_usePermit(owner, operator, 1, deadline, v, r, s)) {
-            ds().isApprovedForAll[owner][operator] = true;
+        if (_usePermit(owner, operator, 1, deadline, v, r, s_)) {
+            s().isApprovedForAll[owner][operator] = true;
             emit ApprovalForAll(owner, operator, true);
         }
     }
@@ -151,23 +151,23 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
     /* ------------- View ------------- */
 
     function totalSupply() public view returns (uint256) {
-        return ds().totalSupply;
+        return s().totalSupply;
     }
 
     function balanceOf(address user) public view returns (uint256) {
-        return ds().userData[user].balance();
+        return s().userData[user].balance();
     }
 
     function numMinted(address user) public view returns (uint256) {
-        return ds().userData[user].numMinted();
+        return s().userData[user].numMinted();
     }
 
     function getApproved(uint256 id) external view returns (address) {
-        return ds().getApproved[id];
+        return s().getApproved[id];
     }
 
     function isApprovedForAll(address owner, address spender) external view returns (bool) {
-        return ds().isApprovedForAll[owner][spender];
+        return s().isApprovedForAll[owner][spender];
     }
 
     function ownerOf(uint256 tokenId) public view returns (address) {
@@ -197,7 +197,7 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
         uint256 count;
 
         unchecked {
-            for (uint256 i = startingIndex; i < ds().totalSupply + startingIndex; ++i) {
+            for (uint256 i = startingIndex; i < s().totalSupply + startingIndex; ++i) {
                 if (user == _tokenDataOf(i).trueOwner()) {
                     ids[count++] = i;
                     if (balance == count) return ids;
@@ -211,7 +211,7 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
     function totalNumLocked() external view returns (uint256) {
         unchecked {
             uint256 count;
-            for (uint256 i = startingIndex; i < startingIndex + ds().totalSupply; ++i) {
+            for (uint256 i = startingIndex; i < startingIndex + s().totalSupply; ++i) {
                 if (_tokenDataOf(i).locked()) ++count;
             }
             return count;
@@ -221,7 +221,7 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
     /* ------------- Internal ------------- */
 
     function _exists(uint256 tokenId) internal view returns (bool) {
-        return startingIndex <= tokenId && tokenId < startingIndex + ds().totalSupply;
+        return startingIndex <= tokenId && tokenId < startingIndex + s().totalSupply;
     }
 
     function _tokenDataOf(uint256 tokenId) public view returns (uint256) {
@@ -230,7 +230,7 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
         unchecked {
             uint256 tokenData;
             for (uint256 curr = tokenId; ; curr--) {
-                tokenData = ds().tokenData[curr];
+                tokenData = s().tokenData[curr];
                 if (tokenData != 0) return curr == tokenId ? tokenData : tokenData.copy();
             }
         }
@@ -240,8 +240,8 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
     }
 
     function _ensureTokenDataSet(uint256 tokenId, uint256 tokenData) private {
-        if (!tokenData.nextTokenDataSet() && ds().tokenData[tokenId] == 0 && _exists(tokenId))
-            ds().tokenData[tokenId] = tokenData;
+        if (!tokenData.nextTokenDataSet() && s().tokenData[tokenId] == 0 && _exists(tokenId))
+            s().tokenData[tokenId] = tokenData;
     }
 
     function _mint(address to, uint256 quantity) internal {
@@ -257,10 +257,10 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
             if (to == address(0)) revert MintToZeroAddress();
             if (quantity == 0) revert MintZeroQuantity();
 
-            uint256 supply = ds().totalSupply;
+            uint256 supply = s().totalSupply;
             uint256 startTokenId = startingIndex + supply;
 
-            // uint256 userData = ds().userData[to];
+            // uint256 userData = s().userData[to];
 
             uint256 tokenData = uint160(to);
             if (lock_) tokenData = tokenData.setConsecutiveLocked().lock();
@@ -284,10 +284,10 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
             }
 
             // @note: to reduce gas costs, user numLocked is not tracked, balances stay constant when locking
-            ds().userData[to] = ds().userData[to].increaseNumMinted(quantity).increaseBalance(quantity);
-            ds().tokenData[startTokenId] = tokenData;
+            s().userData[to] = s().userData[to].increaseNumMinted(quantity).increaseBalance(quantity);
+            s().tokenData[startTokenId] = tokenData;
 
-            ds().totalSupply = supply + quantity;
+            s().totalSupply = supply + quantity;
         }
     }
 
@@ -295,15 +295,15 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
         uint256 tokenData = _tokenDataOf(tokenId);
 
         bool isApprovedOrOwner = (msg.sender == from ||
-            ds().isApprovedForAll[from][msg.sender] ||
-            ds().getApproved[tokenId] == msg.sender);
+            s().isApprovedForAll[from][msg.sender] ||
+            s().getApproved[tokenId] == msg.sender);
 
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
         if (tokenData.owner(warden) != from) revert IncorrectOwner();
 
-        delete ds().getApproved[tokenId];
+        delete s().getApproved[tokenId];
 
-        ds().tokenData[tokenId] = tokenData.lock();
+        s().tokenData[tokenId] = tokenData.lock();
 
         unchecked {
             _ensureTokenDataSet(tokenId + 1, tokenData);
@@ -311,7 +311,7 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
         }
 
         // @note: to reduce gas costs, user numLocked is not tracked, balances stay constant when locking
-        // ds().userData[from] = ds().userData[from].decreaseBalance(1).increaseNumLocked(1).setLockStart(block.timestamp);
+        // s().userData[from] = s().userData[from].decreaseBalance(1).increaseNumLocked(1).setLockStart(block.timestamp);
 
         emit Transfer(from, warden, tokenId);
     }
@@ -320,8 +320,8 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
         uint256 tokenData = _tokenDataOf(tokenId);
 
         bool isApprovedOrOwner = (msg.sender == from ||
-            ds().isApprovedForAll[from][msg.sender] ||
-            ds().getApproved[tokenId] == msg.sender);
+            s().isApprovedForAll[from][msg.sender] ||
+            s().getApproved[tokenId] == msg.sender);
 
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
         if (!tokenData.locked()) revert TokenIdUnlocked();
@@ -336,7 +336,7 @@ abstract contract ERC721MLockable is EIP712PermitUDS {
             }
         }
 
-        ds().tokenData[tokenId] = tokenData.unlock();
+        s().tokenData[tokenId] = tokenData.unlock();
 
         emit Transfer(warden, from, tokenId);
     }
