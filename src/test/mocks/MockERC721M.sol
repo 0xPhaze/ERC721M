@@ -20,12 +20,12 @@ contract MockERC721M is ERC721M {
         _mintAndLock(to, quantity, true);
     }
 
-    function lock(uint256[] calldata tokenIds) public {
-        for (uint256 i; i < tokenIds.length; ++i) _lock(msg.sender, tokenIds[i]);
+    function lockFrom(address from, uint256[] calldata tokenIds) public {
+        for (uint256 i; i < tokenIds.length; ++i) _lock(from, tokenIds[i]);
     }
 
-    function unlock(uint256[] calldata tokenIds) public {
-        for (uint256 i; i < tokenIds.length; ++i) _unlock(msg.sender, tokenIds[i]);
+    function unlockFrom(address from, uint256[] calldata tokenIds) public {
+        for (uint256 i; i < tokenIds.length; ++i) _unlock(from, tokenIds[i]);
     }
 
     function tokenURI(uint256) public pure override returns (string memory) {}

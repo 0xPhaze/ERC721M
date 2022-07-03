@@ -32,7 +32,7 @@ contract ERC721MTest is Test {
 
         uint256[] memory ids = [1].toMemory();
 
-        token.lock(ids);
+        token.lockFrom(tester, ids);
 
         assertEq(token.balanceOf(tester), 1);
         assertEq(token.numMinted(tester), 1);
@@ -40,13 +40,44 @@ contract ERC721MTest is Test {
         assertEq(token.ownerOf(1), address(token));
         assertEq(token.trueOwnerOf(1), tester);
 
-        token.unlock(ids);
+        token.unlockFrom(tester, ids);
 
         assertEq(token.balanceOf(tester), 1);
         assertEq(token.numMinted(tester), 1);
 
         assertEq(token.ownerOf(1), tester);
         assertEq(token.trueOwnerOf(1), tester);
+    }
+
+    function test_lockUnlock_fail() public {
+        token.mint(alice, 1);
+        token.mint(tester, 1);
+
+        vm.expectRevert(CallerNotOwnerNorApproved.selector);
+        token.lockFrom(alice, [1].toMemory());
+
+        vm.expectRevert(IncorrectOwner.selector);
+        token.lockFrom(tester, [1].toMemory());
+
+        vm.expectRevert(CallerNotOwnerNorApproved.selector);
+        token.lockFrom(alice, [1].toMemory());
+
+        vm.prank(alice);
+        token.lockFrom(alice, [1].toMemory());
+
+        vm.expectRevert(IncorrectOwner.selector);
+        token.unlockFrom(tester, [1].toMemory());
+
+        vm.expectRevert(CallerNotOwnerNorApproved.selector);
+        token.unlockFrom(alice, [1].toMemory());
+
+        vm.expectRevert(IncorrectOwner.selector);
+        token.lockFrom(tester, [2, 2].toMemory());
+
+        token.lockFrom(tester, [2].toMemory());
+
+        vm.expectRevert(TokenIdUnlocked.selector);
+        token.unlockFrom(tester, [2, 2].toMemory());
     }
 
     function test_mintAndlock() public {
@@ -60,7 +91,7 @@ contract ERC721MTest is Test {
 
         uint256[] memory ids = 1.range(1 + 5);
 
-        token.unlock(ids);
+        token.unlockFrom(tester, ids);
 
         for (uint256 i; i < 5; ++i) assertEq(token.ownerOf(i + 1), tester);
         for (uint256 i; i < 5; ++i) assertEq(token.trueOwnerOf(i + 1), tester);
@@ -226,14 +257,14 @@ contract ERC721MTest is Test {
         uint256[] memory ids = (1 + quantityA).range(quantityA + quantityT + 1);
         uint256[] memory lockIds = ids.randomSubset(quantityL, rand);
 
-        token.lock(lockIds);
+        token.lockFrom(tester, lockIds);
 
         for (uint256 i; i < quantityT; ++i) {
             assertEq(token.ownerOf(ids[i]), lockIds.includes(ids[i]) ? address(token) : tester);
             assertEq(token.trueOwnerOf(ids[i]), tester);
         }
 
-        token.unlock(lockIds);
+        token.unlockFrom(tester, lockIds);
 
         for (uint256 i; i < quantityA; ++i) assertEq(token.ownerOf(1 + i), alice);
         for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA), tester);
@@ -261,14 +292,14 @@ contract ERC721MTest is Test {
         uint256[] memory ids = (1 + quantityA).range(quantityA + quantityT + 1);
         uint256[] memory unlockIds = ids.randomSubset(quantityL, rand);
 
-        token.unlock(unlockIds);
+        token.unlockFrom(tester, unlockIds);
 
         for (uint256 i; i < quantityT; ++i) {
             assertEq(token.ownerOf(ids[i]), unlockIds.includes(ids[i]) ? tester : address(token));
             assertEq(token.trueOwnerOf(ids[i]), tester);
         }
 
-        token.lock(unlockIds);
+        token.lockFrom(tester, unlockIds);
 
         for (uint256 i; i < quantityA; ++i) assertEq(token.ownerOf(1 + i), alice);
         for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA), address(token));
