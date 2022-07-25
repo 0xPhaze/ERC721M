@@ -2,7 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "./ERC721MLibrary.sol";
-import {EIP712PermitUDS} from "UDS/EIP712PermitUDS.sol";
+import {EIP712PermitUDS as EIP712Permit} from "UDS/auth/EIP712PermitUDS.sol";
+
+// ------------- storage
 
 struct ERC721MStorage {
     uint256 totalSupply;
@@ -16,32 +18,28 @@ struct ERC721MStorage {
 bytes32 constant DIAMOND_STORAGE_ERC721M_LOCKABLE = 0xacef0a52ec0e8b948b85810f48a276692a03896348e0958ead290f1909a95599;
 
 function s() pure returns (ERC721MStorage storage diamondStorage) {
-    assembly {
-        diamondStorage.slot := DIAMOND_STORAGE_ERC721M_LOCKABLE
-    }
+    assembly { diamondStorage.slot := DIAMOND_STORAGE_ERC721M_LOCKABLE } // prettier-ignore
 }
 
-error IncorrectOwner();
-error NonexistentToken();
-error CallerNotOwnerNorApproved();
+// ------------- errors
 
+error IncorrectOwner();
+error TokenIdUnlocked();
+error NonexistentToken();
 error MintZeroQuantity();
 error MintToZeroAddress();
-error MintExceedsMaxSupply();
-
-error TransferFromIncorrectOwner();
 error TransferFromInvalidTo();
-error TransferToNonERC721Receiver();
 error TransferToZeroAddress();
+error CallerNotOwnerNorApproved();
+error TransferFromIncorrectOwner();
+error TransferToNonERC721Receiver();
 
-error TokenIdLocked();
-error TokenIdUnlocked();
-
-/// @notice ERC721A modified implementation that allows for token locking
-/// @notice Compatible with Diamond Storage
-/// @notice Integrates EIP712Permit
+/// @title ERC721M (Integrated Token Locking)
 /// @author phaze (https://github.com/0xPhaze/ERC721M)
-abstract contract ERC721M is EIP712PermitUDS {
+/// @author ERC721A (https://github.com/chiru-labs/ERC721A)
+/// @author Solmate (https://github.com/Rari-Capital/solmate)
+/// @notice Integrates EIP712Permit
+abstract contract ERC721M is EIP712Permit {
     using TokenDataOps for uint256;
     using UserDataOps for uint256;
 
@@ -51,9 +49,7 @@ abstract contract ERC721M is EIP712PermitUDS {
 
     uint256 constant startingIndex = 1;
 
-    address public immutable warden = address(this); // @note can be override for proxies
-
-    /* ------------- Virtual ------------- */
+    /* ------------- view ------------- */
 
     function name() external view virtual returns (string memory);
 
@@ -61,74 +57,117 @@ abstract contract ERC721M is EIP712PermitUDS {
 
     function tokenURI(uint256 id) external view virtual returns (string memory);
 
-    /* ------------- External ------------- */
+    function balanceOf(address user) public view returns (uint256) {
+        return s().userData[user].balance();
+    }
 
-    function approve(address spender, uint256 tokenId) external {
-        address owner = _tokenDataOf(tokenId).owner(warden);
+    function getApproved(uint256 id) external view returns (address) {
+        return s().getApproved[id];
+    }
+
+    function isApprovedForAll(address owner, address spender) external view returns (bool) {
+        return s().isApprovedForAll[owner][spender];
+    }
+
+    function ownerOf(uint256 id) public view returns (address) {
+        return _tokenDataOf(id).owner(warden());
+    }
+
+    function warden() public view virtual returns (address) {
+        return address(this);
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return s().totalSupply;
+    }
+
+    function numMinted(address user) public view returns (uint256) {
+        return s().userData[user].numMinted();
+    }
+
+    function trueOwnerOf(uint256 id) public view returns (address) {
+        return _tokenDataOf(id).trueOwner();
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
+        return
+            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
+            interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
+            interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+    }
+
+    /* ------------- public ------------- */
+
+    function approve(address spender, uint256 id) public virtual {
+        address owner = _tokenDataOf(id).owner(warden());
 
         if (msg.sender != owner && !s().isApprovedForAll[owner][msg.sender]) revert CallerNotOwnerNorApproved();
 
-        s().getApproved[tokenId] = spender;
+        s().getApproved[id] = spender;
 
-        emit Approval(owner, spender, tokenId);
+        emit Approval(owner, spender, id);
     }
 
-    function setApprovalForAll(address operator, bool approved) external {
+    function setApprovalForAll(address operator, bool approved) public virtual {
         s().isApprovedForAll[msg.sender][operator] = approved;
 
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
+    function _isApprovedOrOwner(address from, uint256 id) private view returns (bool) {
+        return (msg.sender == from || s().isApprovedForAll[from][msg.sender] || s().getApproved[id] == msg.sender);
+    }
+
     function transferFrom(
         address from,
         address to,
-        uint256 tokenId
-    ) public {
+        uint256 id
+    ) public virtual {
         if (to == address(0)) revert TransferToZeroAddress();
-        if (to == warden || to == address(this)) revert TransferFromInvalidTo();
+        if (to == warden()) revert TransferFromInvalidTo();
 
-        uint256 tokenData = _tokenDataOf(tokenId);
+        uint256 tokenData = _tokenDataOf(id);
 
         bool isApprovedOrOwner = (msg.sender == from ||
             s().isApprovedForAll[from][msg.sender] ||
-            s().getApproved[tokenId] == msg.sender);
+            s().getApproved[id] == msg.sender);
 
-        if (tokenData.owner(warden) != from) revert TransferFromIncorrectOwner();
+        if (tokenData.owner(warden()) != from) revert TransferFromIncorrectOwner();
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
 
-        delete s().getApproved[tokenId];
+        delete s().getApproved[id];
 
         unchecked {
-            _ensureTokenDataSet(tokenId + 1, tokenData);
+            _ensureTokenDataSet(id + 1, tokenData);
         }
-        s().tokenData[tokenId] = tokenData.setOwner(to).flagNextTokenDataSet();
+        s().tokenData[id] = tokenData.setOwner(to).flagNextTokenDataSet();
         // .setLastTransfer(block.timestamp)
         // .incrementOwnerCount()
 
         s().userData[from] = s().userData[from].decreaseBalance(1);
         s().userData[to] = s().userData[to].increaseBalance(1);
 
-        emit Transfer(from, to, tokenId);
+        emit Transfer(from, to, id);
     }
 
     function safeTransferFrom(
         address from,
         address to,
-        uint256 tokenId
-    ) external {
-        safeTransferFrom(from, to, tokenId, "");
+        uint256 id
+    ) public virtual {
+        safeTransferFrom(from, to, id, "");
     }
 
     function safeTransferFrom(
         address from,
         address to,
-        uint256 tokenId,
+        uint256 id,
         bytes memory data
-    ) public {
-        transferFrom(from, to, tokenId);
+    ) public virtual {
+        transferFrom(from, to, id);
         if (
             to.code.length != 0 &&
-            IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) !=
+            IERC721Receiver(to).onERC721Received(msg.sender, from, id, data) !=
             IERC721Receiver(to).onERC721Received.selector
         ) revert TransferToNonERC721Receiver();
     }
@@ -144,50 +183,14 @@ abstract contract ERC721M is EIP712PermitUDS {
     ) public virtual {
         if (_usePermit(owner, operator, 1, deadline, v, r, s_)) {
             s().isApprovedForAll[owner][operator] = true;
+
             emit ApprovalForAll(owner, operator, true);
         }
     }
 
-    /* ------------- View ------------- */
-
-    function totalSupply() public view returns (uint256) {
-        return s().totalSupply;
-    }
-
-    function balanceOf(address user) public view returns (uint256) {
-        return s().userData[user].balance();
-    }
-
-    function numMinted(address user) public view returns (uint256) {
-        return s().userData[user].numMinted();
-    }
-
-    function getApproved(uint256 id) external view returns (address) {
-        return s().getApproved[id];
-    }
-
-    function isApprovedForAll(address owner, address spender) external view returns (bool) {
-        return s().isApprovedForAll[owner][spender];
-    }
-
-    function ownerOf(uint256 tokenId) public view returns (address) {
-        return _tokenDataOf(tokenId).owner(warden);
-    }
-
-    function trueOwnerOf(uint256 tokenId) public view returns (address) {
-        return _tokenDataOf(tokenId).trueOwner();
-    }
-
-    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
-        return
-            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
-            interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
-            interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
-    }
-
     /* ------------- O(n) Read-only ------------- */
 
-    function tokenIdsOf(address user) private view returns (uint256[] memory) {
+    function tokenIdsOf(address user) external view returns (uint256[] memory) {
         uint256 balance = balanceOf(user);
 
         uint256[] memory ids = new uint256[](balance);
@@ -220,20 +223,26 @@ abstract contract ERC721M is EIP712PermitUDS {
         return count;
     }
 
-    /* ------------- Internal ------------- */
+    /* ------------- internal ------------- */
 
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return startingIndex <= tokenId && tokenId < _nextTokenId();
+    function _exists(uint256 id) internal view returns (bool) {
+        return startingIndex <= id && id < _nextTokenId();
     }
 
-    function _tokenDataOf(uint256 tokenId) internal view returns (uint256) {
-        if (!_exists(tokenId)) revert NonexistentToken();
+    function _nextTokenId() internal view returns (uint256) {
+        return startingIndex + s().totalSupply;
+    }
+
+    function _tokenDataOf(uint256 id) internal view returns (uint256) {
+        if (!_exists(id)) revert NonexistentToken();
 
         unchecked {
             uint256 tokenData;
-            for (uint256 curr = tokenId; ; curr--) {
+
+            for (uint256 curr = id; ; curr--) {
                 tokenData = s().tokenData[curr];
-                if (tokenData != 0) return curr == tokenId ? tokenData : tokenData.copy();
+
+                if (tokenData != 0) return curr == id ? tokenData : tokenData.copy();
             }
         }
 
@@ -241,13 +250,8 @@ abstract contract ERC721M is EIP712PermitUDS {
         return 0;
     }
 
-    function _ensureTokenDataSet(uint256 tokenId, uint256 tokenData) internal {
-        if (!tokenData.nextTokenDataSet() && s().tokenData[tokenId] == 0 && _exists(tokenId))
-            s().tokenData[tokenId] = tokenData;
-    }
-
-    function _nextTokenId() internal view returns (uint256) {
-        return startingIndex + s().totalSupply;
+    function _ensureTokenDataSet(uint256 id, uint256 tokenData) internal {
+        if (!tokenData.nextTokenDataSet() && s().tokenData[id] == 0 && _exists(id)) s().tokenData[id] = tokenData;
     }
 
     function _mint(address to, uint256 quantity) internal {
@@ -276,14 +280,14 @@ abstract contract ERC721M is EIP712PermitUDS {
 
             if (lock_) {
                 // @note: to reduce gas costs, user numLocked is not tracked
-                // userData = userData.increaseNumLocked(quantity);
+                // userData = userData.increaseNumLocked(quantity).setLockStart(block.timestamp);
 
-                uint256 tokenId;
+                uint256 id;
                 for (uint256 i; i < quantity; ++i) {
-                    tokenId = startTokenId + i;
+                    id = startTokenId + i;
 
-                    emit Transfer(address(0), to, tokenId);
-                    emit Transfer(to, warden, tokenId);
+                    emit Transfer(address(0), to, id);
+                    emit Transfer(to, warden(), id);
                 }
             } else {
                 for (uint256 i; i < quantity; ++i) emit Transfer(address(0), to, startTokenId + i);
@@ -297,37 +301,38 @@ abstract contract ERC721M is EIP712PermitUDS {
         }
     }
 
-    function _lock(address from, uint256 tokenId) internal {
-        uint256 tokenData = _tokenDataOf(tokenId);
+    function _lock(address from, uint256 id) internal {
+        uint256 tokenData = _tokenDataOf(id);
 
         bool isApprovedOrOwner = (msg.sender == from ||
             s().isApprovedForAll[from][msg.sender] ||
-            s().getApproved[tokenId] == msg.sender);
+            s().getApproved[id] == msg.sender);
 
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
-        if (tokenData.owner(warden) != from) revert IncorrectOwner();
+        if (tokenData.owner(warden()) != from) revert IncorrectOwner();
 
-        delete s().getApproved[tokenId];
+        delete s().getApproved[id];
 
-        s().tokenData[tokenId] = tokenData.lock();
+        s().tokenData[id] = tokenData.lock();
 
         unchecked {
-            _ensureTokenDataSet(tokenId + 1, tokenData);
+            _ensureTokenDataSet(id + 1, tokenData);
+
             tokenData = tokenData.unsetConsecutiveLocked().flagNextTokenDataSet();
         }
 
         // @note: to reduce gas costs, user numLocked is not tracked, balances stay constant when locking
         // s().userData[from] = s().userData[from].decreaseBalance(1).increaseNumLocked(1).setLockStart(block.timestamp);
 
-        emit Transfer(from, warden, tokenId);
+        emit Transfer(from, warden(), id);
     }
 
-    function _unlock(address from, uint256 tokenId) internal {
-        uint256 tokenData = _tokenDataOf(tokenId);
+    function _unlock(address from, uint256 id) internal {
+        uint256 tokenData = _tokenDataOf(id);
 
         bool isApprovedOrOwner = (msg.sender == from ||
             s().isApprovedForAll[from][msg.sender] ||
-            s().getApproved[tokenId] == msg.sender);
+            s().getApproved[id] == msg.sender);
 
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
         if (!tokenData.locked()) revert TokenIdUnlocked();
@@ -337,14 +342,15 @@ abstract contract ERC721M is EIP712PermitUDS {
         // because tokenData in this case is implicit and needs to carry over
         if (tokenData.isConsecutiveLocked()) {
             unchecked {
-                _ensureTokenDataSet(tokenId + 1, tokenData);
+                _ensureTokenDataSet(id + 1, tokenData);
+
                 tokenData = tokenData.unsetConsecutiveLocked().flagNextTokenDataSet();
             }
         }
 
-        s().tokenData[tokenId] = tokenData.unlock();
+        s().tokenData[id] = tokenData.unlock();
 
-        emit Transfer(warden, from, tokenId);
+        emit Transfer(warden(), from, id);
     }
 }
 

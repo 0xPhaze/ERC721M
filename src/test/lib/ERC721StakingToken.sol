@@ -6,7 +6,7 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 
 error IncorrectOwner();
 
-/// Minimal ERC721 staking contract
+/// Minimal Mock ERC721 staking contract
 /// Combined ERC20 Token to avoid external calls during claim
 /// @author phaze (https://github.com/0xPhaze/ERC721M)
 contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
@@ -24,7 +24,7 @@ contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
         nft = nft_;
     }
 
-    /* ------------- External ------------- */
+    /* ------------- external ------------- */
 
     function stake(uint256[] calldata tokenIds) external {
         unchecked {
@@ -41,19 +41,17 @@ contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
     }
 
     function unstake(uint256[] calldata tokenIds) external {
-        unchecked {
-            claimReward();
+        claimReward();
 
-            for (uint256 i; i < tokenIds.length; ++i) {
-                if (owners[tokenIds[i]] != msg.sender) revert IncorrectOwner();
+        for (uint256 i; i < tokenIds.length; ++i) {
+            if (owners[tokenIds[i]] != msg.sender) revert IncorrectOwner();
 
-                delete owners[tokenIds[i]];
+            delete owners[tokenIds[i]];
 
-                nft.transferFrom(address(this), msg.sender, tokenIds[i]);
-            }
-
-            stakeData[msg.sender].numStaked -= uint128(tokenIds.length);
+            nft.transferFrom(address(this), msg.sender, tokenIds[i]);
         }
+
+        stakeData[msg.sender].numStaked -= uint128(tokenIds.length);
     }
 
     function claimReward() public {
@@ -64,7 +62,7 @@ contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
         stakeData[msg.sender].lastClaimed = uint128(block.timestamp);
     }
 
-    /* ------------- View ------------- */
+    /* ------------- view ------------- */
 
     function pendingReward(address user) public view returns (uint256) {
         unchecked {

@@ -2,7 +2,7 @@
 
 ERC721MLockable (now simply ERC721M) is adapted from the original ERC721M to be more general and simpler.
 Extending the idea of ERC721A it allows for cheap and efficient locking.
-This can be applied for staking or bridgeing NFTs to other chains (see extensions).
+This can be applied for staking or bridging NFTs to other chains (see extensions).
 
 Thus far, it has the cheapest gas costs when it comes to "minting and staking" directly.
 The idea was first introduced in the [Mad Mouse Circus NFT](https://etherscan.io/address/0x3ad30c5e2985e960e89f4a28efc91ba73e104b77#code) project.
@@ -10,15 +10,20 @@ The idea was first introduced in the [Mad Mouse Circus NFT](https://etherscan.io
 ERC721MLockable is further compatible with the EIP-2535 Diamond Storage pattern
 which is helpful when working with [upgradeable contracts](https://github.com/0xPhaze/UDS).
 
-Project structure
-- [ERC721MLibrary.sol](./src/ERC721MLibrary.sol) - Library for bitmap manipulation
-- [ERC721MLockable.sol](./src/ERC721MLockable.sol) - ERC721A-like with locking functionality using Diamond Storage
-- extensions
-   -  [ERC721MStaking.sol](./src/extensions/ERC721MStaking.sol) - ERC721M staking extension, allows minting an ERC20 token as reward
-   -  [FxERC721MLockableRoot.sol](./src/extensions/FxERC721MLockableRoot.sol) - FxPortal extension, allows NFT to be transferred to Polygon
-- examples
-  -   [ERC721MExample.sol](./src/example/ERC721MExample.sol) - An example contract that could be used for a ERC721M that allows staking
-- test
+## Contracts
+
+```ml
+src
+├── ERC721M.sol - "ERC721A-like with locking functionality"
+├── ERC721MLibrary.sol - "Library for bitmap manipulation"
+├── examples
+│   └── ERC721MExample.sol (@extensions) - "An example contract using `ERC721MStaking.sol`"
+└── extensions
+    ├── ERC721MStaking.sol (@extensions) - "ERC721M staking extension, allows minting an ERC20 token as reward"
+    └── FxERC721MLockableRoot.sol (@extensions) - "FxPortal extension, allows NFT to be transferred to Polygon"
+```
+
+!All gas tests and comparisons and the Polygon FxPortal Extension are moved to the extensions branch to keep things simple and clean here!
 
 Implementation and tests are preliminary.
 This should not be used in production until sufficiently tested.

@@ -46,7 +46,7 @@ contract GMC is ERC721MStaking, Owned {
 
     constructor(IERC20 token) ERC721MStaking(token) Owned(msg.sender) {}
 
-    /* ------------- External ------------- */
+    /* ------------- external ------------- */
 
     function mint(uint256 quantity, bool lock) external payable onlyEOA {
         unchecked {
