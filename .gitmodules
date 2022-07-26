@@ -4,18 +4,9 @@
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/brockelmore/forge-std
-[submodule "lib/ERC721A"]
-	path = lib/ERC721A
-	url = https://github.com/chiru-labs/ERC721A
 [submodule "lib/UDS"]
 	path = lib/UDS
 	url = https://github.com/0xphaze/UDS
-[submodule "lib/contracts"]
-	path = lib/fx-portal
-	url = https://github.com/fx-portal/contracts
-[submodule "lib/openzeppelin-contracts"]
-	path = lib/openzeppelin-contracts
-	url = https://github.com/openzeppelin/openzeppelin-contracts
 [submodule "lib/ArrayUtils"]
 	path = lib/ArrayUtils
 	url = https://github.com/0xPhaze/ArrayUtils
