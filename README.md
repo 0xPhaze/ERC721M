@@ -17,13 +17,13 @@ src
 ├── ERC721M.sol - "ERC721A-like with locking functionality"
 ├── ERC721MLibrary.sol - "Library for bitmap manipulation"
 ├── examples
-│   └── ERC721MExample.sol (@extensions) - "An example contract using `ERC721MStaking.sol`"
+│   └── ERC721MExample.sol - "An example contract using `ERC721MStaking.sol`"
 └── extensions
-    ├── ERC721MStaking.sol (@extensions) - "ERC721M staking extension, allows minting an ERC20 token as reward"
-    └── FxERC721MLockableRoot.sol (@extensions) - "FxPortal extension, allows NFT to be transferred to Polygon"
+    ├── ERC721MStaking.sol - "ERC721M staking extension, allows minting an ERC20 token as reward"
+    └── FxERC721MLockableRoot.sol (branch "@extensions") - "FxPortal extension, allows NFT to be transferred to Polygon"
 ```
 
-!All gas tests and comparisons and the Polygon FxPortal Extension are moved to the extensions branch to keep things simple and clean here!
+!All gas tests and comparisons and the Polygon FxPortal Extension are moved to the **extensions** branch to keep things simple and clean here!
 
 Implementation and tests are preliminary.
 This should not be used in production until sufficiently tested.
