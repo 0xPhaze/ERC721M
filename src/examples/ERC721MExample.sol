@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "solmate/auth/Owned.sol";
-import "solmate/utils/LibString.sol";
+import "./lib/LibString.sol";
+import "./lib/LibECDSA.sol";
 
 import "../extensions/ERC721MStaking.sol";
 
@@ -17,6 +18,7 @@ error ContractCallNotAllowed();
 
 contract GMC is ERC721MStaking, Owned {
     using LibString for uint256;
+    using LibECDSA for bytes32;
 
     event SaleStateUpdate();
 
@@ -70,15 +72,8 @@ contract GMC is ERC721MStaking, Owned {
     /* ------------- private ------------- */
 
     function validSignature(bytes calldata signature, uint256 limit) private view returns (bool) {
-        bytes32 msgHash = keccak256(abi.encode(address(this), msg.sender, limit));
-        bytes32 hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
-        address recovered = ecrecover(
-            hash,
-            uint8(bytes1(signature[64:65])),
-            bytes32(signature[0:32]),
-            bytes32(signature[32:64])
-        );
-        return recovered == signerAddress;
+        bytes32 hash = keccak256(abi.encode(address(this), msg.sender, limit));
+        return hash.toEthSignedMsgHash().isValidSignature(signature, signerAddress);
     }
 
     /* ------------- owner ------------- */

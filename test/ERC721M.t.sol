@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
@@ -22,6 +22,10 @@ contract ERC721MTest is Test {
         vm.label(bob, "Bob");
         vm.label(tester, "Tester");
         vm.label(address(token), "ERC721M");
+    }
+
+    function test_setUp() public {
+        assertEq(DIAMOND_STORAGE_ERC721M_LOCKABLE, keccak256("diamond.storage.erc721m.lockable"));
     }
 
     /* ------------- lock() ------------- */

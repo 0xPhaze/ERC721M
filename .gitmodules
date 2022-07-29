@@ -4,9 +4,12 @@
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/brockelmore/forge-std
-[submodule "lib/UDS"]
-	path = lib/UDS
-	url = https://github.com/0xphaze/UDS
 [submodule "lib/ArrayUtils"]
 	path = lib/ArrayUtils
 	url = https://github.com/0xPhaze/ArrayUtils
+[submodule "lib/UDS"]
+	path = lib/UDS
+	url = https://github.com/0xPhaze/UDS
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/transmissions11/solmate
