@@ -7,6 +7,8 @@ contract MockERC721MStaking is ERC721MStaking {
     string public override name;
     string public override symbol;
 
+    uint256 private immutable _rewardEndDate = block.timestamp + 5 * 365 days;
+
     constructor(
         string memory name_,
         string memory symbol_,
@@ -14,6 +16,14 @@ contract MockERC721MStaking is ERC721MStaking {
     ) ERC721MStaking(tkn) {
         name = name_;
         symbol = symbol_;
+    }
+
+    function rewardEndDate() public view override returns (uint256) {
+        return _rewardEndDate;
+    }
+
+    function rewardDailyRate() public pure override returns (uint256) {
+        return 1e18;
     }
 
     function mint(address to, uint256 quantity) public {

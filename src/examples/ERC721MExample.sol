@@ -24,9 +24,6 @@ contract StakingNFT is ERC721MStaking, Owned {
 
     bool public publicSaleActive;
 
-    string public constant override name = "My NFT";
-    string public constant override symbol = "NFT";
-
     string private baseURI;
     string private unrevealedURI = "ipfs://QSOZMCWOM/";
 
@@ -39,7 +36,28 @@ contract StakingNFT is ERC721MStaking, Owned {
 
     address private signerAddress = address(0xb0b);
 
+    uint256 private immutable _rewardEndDate = block.timestamp + 5 * 365 days;
+
     constructor(IERC20 token) ERC721MStaking(token) Owned(msg.sender) {}
+
+    /* ------------- override ------------- */
+
+    string public constant override name = "My NFT";
+    string public constant override symbol = "NFT";
+
+    function rewardEndDate() public view override returns (uint256) {
+        return _rewardEndDate;
+    }
+
+    function rewardDailyRate() public pure override returns (uint256) {
+        return 1e18;
+    }
+
+    function tokenURI(uint256 id) public view override returns (string memory) {
+        if (!_exists(id)) revert NonexistentToken();
+
+        return (bytes(baseURI).length == 0) ? unrevealedURI : string.concat(baseURI, id.toString(), ".json");
+    }
 
     /* ------------- external ------------- */
 
@@ -100,10 +118,8 @@ contract StakingNFT is ERC721MStaking, Owned {
         uint256[] calldata amounts,
         bool locked
     ) external onlyOwner {
-        unchecked {
-            if (locked) for (uint256 i; i < users.length; ++i) _mintAndStake(users[i], amounts[i]);
-            else for (uint256 i; i < users.length; ++i) _mint(users[i], amounts[i]);
-        }
+        if (locked) for (uint256 i; i < users.length; ++i) _mintAndStake(users[i], amounts[i]);
+        else for (uint256 i; i < users.length; ++i) _mint(users[i], amounts[i]);
     }
 
     function withdraw() external onlyOwner {
@@ -116,15 +132,5 @@ contract StakingNFT is ERC721MStaking, Owned {
     modifier onlyEOA() {
         if (tx.origin != msg.sender) revert ContractCallNotAllowed();
         _;
-    }
-
-    /* ------------- erc721 ------------- */
-
-    function tokenURI(uint256 id) public view override returns (string memory) {
-        if (!_exists(id)) revert NonexistentToken();
-
-        if (bytes(baseURI).length == 0) return unrevealedURI;
-
-        return string.concat(baseURI, id.toString(), ".json");
     }
 }

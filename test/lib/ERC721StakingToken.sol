@@ -18,7 +18,7 @@ contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
     mapping(uint256 => address) public ownerOf;
     mapping(address => StakeData) public stakeData;
 
-    uint256 private constant rewardRate = 1e18;
+    uint256 private constant rewardDailyRate = 1e18;
 
     ERC721 immutable nft;
 
@@ -69,7 +69,8 @@ contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
     function pendingReward(address user) public view returns (uint256) {
         unchecked {
             return
-                (stakeData[user].numStaked * rewardRate * (block.timestamp - stakeData[user].lastClaimed)) / (1 days);
+                (stakeData[user].numStaked * rewardDailyRate * (block.timestamp - stakeData[user].lastClaimed)) /
+                (1 days);
         }
     }
 

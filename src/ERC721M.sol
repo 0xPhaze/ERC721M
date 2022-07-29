@@ -7,6 +7,8 @@ import {EIP712PermitUDS as EIP712Permit} from "UDS/auth/EIP712PermitUDS.sol";
 // ------------- storage
 
 struct ERC721MStorage {
+    string name;
+    string symbol;
     uint256 totalSupply;
     mapping(uint256 => address) getApproved;
     mapping(address => mapping(address => bool)) isApprovedForAll;
@@ -49,11 +51,22 @@ abstract contract ERC721M is EIP712Permit {
 
     uint256 constant startingIndex = 1;
 
+    /* ------------- init ------------- */
+
+    function __ERC721_init(string memory name_, string memory symbol_) internal {
+        s().name = name_;
+        s().symbol = symbol_;
+    }
+
     /* ------------- view ------------- */
 
-    function name() external view virtual returns (string memory);
+    function name() external view virtual returns (string memory) {
+        return s().name;
+    }
 
-    function symbol() external view virtual returns (string memory);
+    function symbol() external view virtual returns (string memory) {
+        return s().symbol;
+    }
 
     function tokenURI(uint256 id) external view virtual returns (string memory);
 
@@ -185,41 +198,6 @@ abstract contract ERC721M is EIP712Permit {
 
             emit ApprovalForAll(owner, operator, true);
         }
-    }
-
-    /* ------------- O(n) Read-only ------------- */
-
-    function tokenIdsOf(address user) external view returns (uint256[] memory) {
-        uint256 balance = balanceOf(user);
-
-        uint256[] memory ids = new uint256[](balance);
-
-        if (balance == 0) return ids;
-
-        uint256 count;
-        uint256 endIndex = _nextTokenId();
-
-        unchecked {
-            for (uint256 i = startingIndex; i < endIndex; ++i) {
-                if (user == _tokenDataOf(i).trueOwner()) {
-                    ids[count++] = i;
-                    if (balance == count) return ids;
-                }
-            }
-        }
-
-        return ids;
-    }
-
-    function totalNumLocked() external view returns (uint256) {
-        uint256 count;
-        uint256 endIndex = _nextTokenId();
-
-        unchecked {
-            for (uint256 i = startingIndex; i < endIndex; ++i) if (_tokenDataOf(i).locked()) ++count;
-        }
-
-        return count;
     }
 
     /* ------------- internal ------------- */
