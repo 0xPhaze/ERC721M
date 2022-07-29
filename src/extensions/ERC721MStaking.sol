@@ -19,12 +19,6 @@ abstract contract ERC721MStaking is ERC721M {
         token = token_;
     }
 
-    /* ------------- external ------------- */
-
-    function claimReward() external virtual {
-        s().userData[msg.sender] = _claimReward(msg.sender);
-    }
-
     /* ------------- view ------------- */
 
     function pendingReward(address user) public view virtual returns (uint256) {
@@ -39,9 +33,15 @@ abstract contract ERC721MStaking is ERC721M {
         return s().userData[user].numLocked();
     }
 
-    /* ------------- internal ------------- */
+    /* ------------- external ------------- */
 
-    function _stake(address user, uint256[] calldata tokenIds) internal virtual {
+    function claimReward() external virtual {
+        s().userData[msg.sender] = _claimReward(msg.sender);
+    }
+
+    /* ------------- public ------------- */
+
+    function stake(address user, uint256[] calldata tokenIds) public virtual {
         unchecked {
             uint256 userData = _claimReward(user);
 
@@ -51,7 +51,7 @@ abstract contract ERC721MStaking is ERC721M {
         }
     }
 
-    function _unstake(address user, uint256[] calldata tokenIds) internal virtual {
+    function unstake(address user, uint256[] calldata tokenIds) public virtual {
         unchecked {
             uint256 userData = _claimReward(user);
 
@@ -60,6 +60,8 @@ abstract contract ERC721MStaking is ERC721M {
             s().userData[user] = userData.decreaseNumLocked(tokenIds.length);
         }
     }
+
+    /* ------------- internal ------------- */
 
     function _mintAndStake(address to, uint256 quantity) internal virtual {
         uint256 userData = _claimReward(to);

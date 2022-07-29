@@ -16,8 +16,7 @@ error SignatureExceedsLimit();
 error ContractCallNotAllowed();
 
 contract GMC is ERC721MStaking, Owned {
-    using ECDSA for bytes32;
-    using Strings for uint256;
+    using LibString for uint256;
 
     event SaleStateUpdate();
 
@@ -34,7 +33,7 @@ contract GMC is ERC721MStaking, Owned {
 
     uint256 private constant price = 0.02 ether;
     uint256 private constant whitelistPrice = 0.01 ether;
-    uint256 private constant PURCHASE_LIMIT = 10;
+    uint256 private constant PURCHASE_LIMIT = 5;
 
     address private signerAddress = address(0xb0b);
 
@@ -43,16 +42,14 @@ contract GMC is ERC721MStaking, Owned {
     /* ------------- external ------------- */
 
     function mint(uint256 quantity, bool lock) external payable onlyEOA {
-        unchecked {
-            if (!publicSaleActive) revert PublicSaleNotActive();
-            if (PURCHASE_LIMIT < quantity) revert ExceedsLimit();
-            if (msg.value != price * quantity) revert IncorrectValue();
-            if (totalSupply() + quantity > MAX_SUPPLY) revert ExceedsLimit();
-            if (numMinted(msg.sender) + quantity > MAX_PER_WALLET) revert ExceedsLimit();
+        if (!publicSaleActive) revert PublicSaleNotActive();
+        if (PURCHASE_LIMIT < quantity) revert ExceedsLimit();
+        if (msg.value != price * quantity) revert IncorrectValue();
+        if (totalSupply() + quantity > MAX_SUPPLY) revert ExceedsLimit();
+        if (numMinted(msg.sender) + quantity > MAX_PER_WALLET) revert ExceedsLimit();
 
-            if (lock) _mintAndStake(msg.sender, quantity);
-            else _mint(msg.sender, quantity);
-        }
+        if (lock) _mintAndStake(msg.sender, quantity);
+        else _mint(msg.sender, quantity);
     }
 
     function whitelistMint(
@@ -61,33 +58,30 @@ contract GMC is ERC721MStaking, Owned {
         uint256 limit,
         bytes calldata signature
     ) external payable onlyEOA {
-        unchecked {
-            if (!validSignature(signature, limit)) revert InvalidSignature();
-            if (msg.value != whitelistPrice * quantity) revert IncorrectValue();
-            if (totalSupply() + quantity > MAX_SUPPLY) revert ExceedsLimit();
-            if (numMinted(msg.sender) + quantity > MAX_PER_WALLET) revert ExceedsLimit();
+        if (!validSignature(signature, limit)) revert InvalidSignature();
+        if (msg.value != whitelistPrice * quantity) revert IncorrectValue();
+        if (totalSupply() + quantity > MAX_SUPPLY) revert ExceedsLimit();
+        if (numMinted(msg.sender) + quantity > MAX_PER_WALLET) revert ExceedsLimit();
 
-            if (lock) _mintAndStake(msg.sender, quantity);
-            else _mint(msg.sender, quantity);
-        }
+        if (lock) _mintAndStake(msg.sender, quantity);
+        else _mint(msg.sender, quantity);
     }
 
-    function stake(uint256[] calldata tokenIds) public {
-        _stake(msg.sender, tokenIds);
-    }
-
-    function unstake(uint256[] calldata tokenIds) public {
-        _unstake(msg.sender, tokenIds);
-    }
-
-    /* ------------- Private ------------- */
+    /* ------------- private ------------- */
 
     function validSignature(bytes calldata signature, uint256 limit) private view returns (bool) {
         bytes32 msgHash = keccak256(abi.encode(address(this), msg.sender, limit));
-        return msgHash.toEthSignedMessageHash().recover(signature) == signerAddress;
+        bytes32 hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
+        address recovered = ecrecover(
+            hash,
+            uint8(bytes1(signature[64:65])),
+            bytes32(signature[0:32]),
+            bytes32(signature[32:64])
+        );
+        return recovered == signerAddress;
     }
 
-    /* ------------- Owner ------------- */
+    /* ------------- owner ------------- */
 
     function setPublicSaleActive(bool active) external onlyOwner {
         publicSaleActive = active;
@@ -122,20 +116,20 @@ contract GMC is ERC721MStaking, Owned {
         payable(msg.sender).transfer(balance); // don't use this for multisigs like gnosis
     }
 
-    /* ------------- Modifier ------------- */
+    /* ------------- modifier ------------- */
 
     modifier onlyEOA() {
         if (tx.origin != msg.sender) revert ContractCallNotAllowed();
         _;
     }
 
-    /* ------------- ERC721 ------------- */
+    /* ------------- erc721 ------------- */
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        if (!_exists(tokenId)) revert NonexistentToken();
+    function tokenURI(uint256 id) public view override returns (string memory) {
+        if (!_exists(id)) revert NonexistentToken();
 
         if (bytes(baseURI).length == 0) return unrevealedURI;
 
-        return string.concat(baseURI, tokenId.toString(), ".json");
+        return string.concat(baseURI, id.toString(), ".json");
     }
 }

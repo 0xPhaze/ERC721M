@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 
 import "./mocks/MockERC721M.sol";
 import "ArrayUtils/ArrayUtils.sol";
-import "../ERC721MLibrary.sol";
 
 contract ERC721MTest is Test {
     using ArrayUtils for *;
