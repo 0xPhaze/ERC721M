@@ -17,11 +17,6 @@ contract ERC721MTest is Test {
 
     function setUp() public {
         token = new MockERC721M("Token", "TKN");
-
-        vm.label(alice, "Alice");
-        vm.label(bob, "Bob");
-        vm.label(tester, "Tester");
-        vm.label(address(token), "ERC721M");
     }
 
     function test_setUp() public {

@@ -16,7 +16,7 @@ error PublicSaleNotActive();
 error SignatureExceedsLimit();
 error ContractCallNotAllowed();
 
-contract GMC is ERC721MStaking, Owned {
+contract StakingNFT is ERC721MStaking, Owned {
     using LibString for uint256;
     using LibECDSA for bytes32;
 

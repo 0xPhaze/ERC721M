@@ -140,9 +140,8 @@ abstract contract ERC721M is EIP712Permit {
         unchecked {
             _ensureTokenDataSet(id + 1, tokenData);
         }
+
         s().tokenData[id] = tokenData.setOwner(to).flagNextTokenDataSet();
-        // .setLastTransfer(block.timestamp)
-        // .incrementOwnerCount()
 
         s().userData[from] = s().userData[from].decreaseBalance(1);
         s().userData[to] = s().userData[to].increaseBalance(1);
@@ -270,8 +269,6 @@ abstract contract ERC721M is EIP712Permit {
             uint256 supply = s().totalSupply;
             uint256 startTokenId = startingIndex + supply;
 
-            // uint256 userData = s().userData[to];
-
             uint256 tokenData = uint160(to);
             if (lock_) tokenData = tokenData.setConsecutiveLocked().lock();
 
@@ -279,7 +276,7 @@ abstract contract ERC721M is EIP712Permit {
             if (quantity == 1) tokenData = tokenData.flagNextTokenDataSet();
 
             if (lock_) {
-                // @note: to reduce gas costs, user numLocked is not tracked
+                // @note: to reduce gas costs when locking individually, user numLocked is not tracked
                 // userData = userData.increaseNumLocked(quantity).setLockStart(block.timestamp);
 
                 uint256 id;
