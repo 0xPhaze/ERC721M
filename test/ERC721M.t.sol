@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 
 import "./mocks/MockERC721M.sol";
-import "ArrayUtils/ArrayUtils.sol";
+import "f-utils/fUtils.sol";
 
 contract ERC721MTest is Test {
-    using ArrayUtils for *;
+    using fUtils for *;
 
     address alice = address(0xbabe);
     address bob = address(0xb0b);
@@ -215,115 +215,135 @@ contract ERC721MTest is Test {
 
     /* ------------- fuzz ------------- */
 
-    function testFuzz_mint(
+    function test_mint(
         uint256 quantityA,
         uint256 quantityT,
         uint256 quantityB
     ) public {
-        quantityT = 1 + (quantityT % 100);
-        quantityA = 1 + (quantityA % 100);
-        quantityB = 1 + (quantityB % 100);
+        quantityA = bound(quantityA, 1, 100);
+        quantityB = bound(quantityB, 1, 100);
+        quantityT = bound(quantityT, 1, 100);
 
         token.mint(alice, quantityA);
-        token.mint(tester, quantityT);
         token.mint(bob, quantityB);
+        token.mint(tester, quantityT);
 
         for (uint256 i; i < quantityA; ++i) assertEq(token.ownerOf(1 + i), alice);
-        for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + i), tester);
-        for (uint256 i; i < quantityB; ++i) assertEq(token.ownerOf(1 + quantityA + quantityT + i), bob);
+        for (uint256 i; i < quantityB; ++i) assertEq(token.ownerOf(1 + quantityA + i), bob);
+        for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + quantityB + i), tester);
 
+        assertEq(token.balanceOf(bob), quantityB);
+        assertEq(token.balanceOf(alice), quantityA);
         assertEq(token.balanceOf(tester), quantityT);
+
+        assertEq(token.numMinted(bob), quantityB);
+        assertEq(token.numMinted(alice), quantityA);
         assertEq(token.numMinted(tester), quantityT);
     }
 
-    function testFuzz_lock(
+    function test_lock(
         uint256 quantityA,
         uint256 quantityT,
         uint256 quantityB,
         uint256 quantityL,
-        uint256 rand
+        uint256 seed
     ) public {
-        quantityT = 1 + (quantityT % 100);
-        quantityA = 1 + (quantityA % 100);
-        quantityB = 1 + (quantityB % 100);
-        quantityL = 0 + (quantityL % quantityT);
+        random.seed(seed);
+
+        quantityA = bound(quantityA, 1, 100);
+        quantityB = bound(quantityB, 1, 100);
+        quantityT = bound(quantityT, 1, 100);
 
         token.mint(alice, quantityA);
+        token.mintAndLock(bob, quantityB);
         token.mint(tester, quantityT);
-        token.mint(bob, quantityB);
 
-        uint256[] memory ids = (1 + quantityA).range(quantityA + quantityT + 1);
-        uint256[] memory lockIds = ids.randomSubset(quantityL, rand);
+        uint256[] memory ids = (1 + quantityA).range(quantityA + quantityB + 1);
 
-        token.lockFrom(tester, lockIds);
+        quantityL = bound(quantityL, 0, ids.length);
 
-        for (uint256 i; i < quantityT; ++i) {
-            assertEq(token.ownerOf(ids[i]), lockIds.includes(ids[i]) ? address(token) : tester);
-            assertEq(token.trueOwnerOf(ids[i]), tester);
-        }
+        uint256[] memory unlockIds = ids.randomSubset(quantityL);
+        uint256[] memory lockedIds = ids.exclusion(unlockIds);
 
-        token.unlockFrom(tester, lockIds);
+        vm.prank(bob);
+        token.unlockFrom(bob, unlockIds);
+
+        for (uint256 i; i < unlockIds.length; ++i) assertEq(token.ownerOf(unlockIds[i]), bob);
+        for (uint256 i; i < lockedIds.length; ++i) assertEq(token.ownerOf(lockedIds[i]), address(token));
+
+        vm.prank(bob);
+        token.unlockFrom(bob, lockedIds);
 
         for (uint256 i; i < quantityA; ++i) assertEq(token.ownerOf(1 + i), alice);
-        for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA), tester);
-        for (uint256 i; i < quantityB; ++i) assertEq(token.ownerOf(1 + quantityA + quantityT + i), bob);
+        for (uint256 i; i < quantityB; ++i) assertEq(token.ownerOf(1 + quantityA + i), bob);
+        for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + quantityB + i), tester);
 
-        assertEq(token.balanceOf(tester), quantityT);
+        assertEq(token.balanceOf(bob), quantityB);
     }
 
-    function testFuzz_mintAndLock(
-        uint256 quantityT,
+    function test_mintAndLock(
         uint256 quantityA,
         uint256 quantityB,
+        uint256 quantityT,
         uint256 quantityL,
-        uint256 rand
+        uint256 seed
     ) public {
-        quantityT = 1 + (quantityT % 100);
-        quantityA = 1 + (quantityA % 100);
-        quantityB = 1 + (quantityB % 100);
-        quantityL = 0 + (quantityL % quantityT);
+        random.seed(seed);
+
+        quantityA = bound(quantityA, 1, 100);
+        quantityB = bound(quantityB, 1, 100);
+        quantityT = bound(quantityT, 1, 100);
 
         token.mint(alice, quantityA);
-        token.mintAndLock(tester, quantityT);
-        token.mint(bob, quantityB);
+        token.mintAndLock(bob, quantityB);
+        token.mint(tester, quantityT);
 
-        uint256[] memory ids = (1 + quantityA).range(quantityA + quantityT + 1);
-        uint256[] memory unlockIds = ids.randomSubset(quantityL, rand);
+        uint256[] memory ids = (1 + quantityA).range(1 + quantityA + quantityB);
 
-        token.unlockFrom(tester, unlockIds);
+        quantityL = bound(quantityL, 0, ids.length);
 
-        for (uint256 i; i < quantityT; ++i) {
-            assertEq(token.ownerOf(ids[i]), unlockIds.includes(ids[i]) ? tester : address(token));
-            assertEq(token.trueOwnerOf(ids[i]), tester);
-        }
+        uint256[] memory unlockIds = ids.randomSubset(quantityL);
+        uint256[] memory lockedIds = ids.exclusion(unlockIds);
 
-        token.lockFrom(tester, unlockIds);
+        vm.prank(bob);
+        token.unlockFrom(bob, unlockIds);
+
+        for (uint256 i; i < unlockIds.length; ++i) assertEq(token.ownerOf(unlockIds[i]), bob);
+        for (uint256 i; i < lockedIds.length; ++i) assertEq(token.ownerOf(lockedIds[i]), address(token));
 
         for (uint256 i; i < quantityA; ++i) assertEq(token.ownerOf(1 + i), alice);
-        for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA), address(token));
-        for (uint256 i; i < quantityT; ++i) assertEq(token.trueOwnerOf(1 + quantityA), tester);
-        for (uint256 i; i < quantityB; ++i) assertEq(token.ownerOf(1 + quantityA + quantityT + i), bob);
+        for (uint256 i; i < quantityB; ++i) assertEq(token.trueOwnerOf(1 + quantityA + i), bob);
+        for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + quantityB + i), tester);
 
-        assertEq(token.balanceOf(tester), quantityT);
+        vm.prank(bob);
+        token.unlockFrom(bob, lockedIds);
+
+        for (uint256 i; i < quantityA; ++i) assertEq(token.ownerOf(1 + i), alice);
+        for (uint256 i; i < quantityB; ++i) assertEq(token.ownerOf(1 + quantityA + i), bob);
+        for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + quantityB + i), tester);
+
+        assertEq(token.balanceOf(bob), quantityB);
     }
 
-    function testFuzz_transferFrom(
-        uint256 quantityT,
+    function test_transferFrom(
         uint256 quantityA,
         uint256 quantityB,
+        uint256 quantityT,
+        uint256 quantityL,
         uint256 n,
-        uint256 rand
+        uint256 seed
     ) public {
-        quantityT = 1 + (quantityT % 100);
-        quantityA = 1 + (quantityA % 100);
-        quantityB = 1 + (quantityB % 100);
-        n = 1 + (n % 100);
+        random.seed(seed);
+
+        n = bound(n, 1, 100);
+
+        test_mintAndLock(quantityA, quantityB, quantityT, quantityL, seed);
+
+        quantityA = bound(quantityA, 1, 100);
+        quantityB = bound(quantityB, 1, 100);
+        quantityT = bound(quantityT, 1, 100);
 
         uint256 sum = quantityT + quantityA + quantityB;
-
-        token.mint(alice, quantityA);
-        token.mint(bob, quantityB);
-        token.mint(tester, quantityT);
 
         address[] memory owners = new address[](sum);
 
@@ -332,15 +352,15 @@ contract ERC721MTest is Test {
         for (uint256 i; i < quantityT; ++i) owners[quantityA + quantityB + i] = tester;
 
         for (uint256 i; i < n; ++i) {
-            uint256 randId = uint256(keccak256(abi.encode(rand, i))) % sum;
-            address newOwner = address(uint160(uint256(keccak256(abi.encode(rand, i)))));
+            uint256 id = random.next(sum);
 
-            address oldOwner = owners[randId];
+            address oldOwner = owners[id];
+            address newOwner = random.nextAddress();
 
             vm.prank(oldOwner);
-            token.transferFrom(oldOwner, newOwner, 1 + randId);
+            token.transferFrom(oldOwner, newOwner, 1 + id);
 
-            owners[randId] = newOwner;
+            owners[id] = newOwner;
         }
     }
 }
