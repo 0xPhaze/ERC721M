@@ -2,8 +2,9 @@
 pragma solidity >=0.8.0;
 
 import "ERC721M/ERC721M.sol";
+import "ERC721M/extensions/ERC721MQuery.sol";
 
-contract MockERC721M is ERC721M {
+contract MockERC721M is ERC721M, ERC721MQuery {
     string public override name;
     string public override symbol;
 

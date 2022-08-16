@@ -4,10 +4,11 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 
 import "./mocks/MockERC721M.sol";
-import "f-utils/fUtils.sol";
+
+import {futils, random} from "futils/futils.sol";
 
 contract ERC721MTest is Test {
-    using fUtils for *;
+    using futils for *;
 
     address alice = address(0xbabe);
     address bob = address(0xb0b);
@@ -239,6 +240,10 @@ contract ERC721MTest is Test {
         assertEq(token.numMinted(bob), quantityB);
         assertEq(token.numMinted(alice), quantityA);
         assertEq(token.numMinted(tester), quantityT);
+
+        assertEq(token.getOwnedIds(alice), (1).range(1 + quantityA));
+        assertEq(token.getOwnedIds(bob), (1 + quantityA).range(1 + quantityA + quantityB));
+        assertEq(token.getOwnedIds(tester), (1 + quantityA + quantityB).range(1 + quantityA + quantityB + quantityT));
     }
 
     function test_lock(
@@ -258,19 +263,25 @@ contract ERC721MTest is Test {
         token.mintAndLock(bob, quantityB);
         token.mint(tester, quantityT);
 
-        uint256[] memory ids = (1 + quantityA).range(quantityA + quantityB + 1);
+        uint256[] memory ids = (1 + quantityA).range(1 + quantityA + quantityB);
 
         quantityL = bound(quantityL, 0, ids.length);
 
         uint256[] memory unlockIds = ids.randomSubset(quantityL);
         uint256[] memory lockedIds = ids.exclusion(unlockIds);
 
+        assertEq(token.getOwnedIds(bob), ids);
+
+        // unlock `unlockIds`
         vm.prank(bob);
         token.unlockFrom(bob, unlockIds);
 
         for (uint256 i; i < unlockIds.length; ++i) assertEq(token.ownerOf(unlockIds[i]), bob);
         for (uint256 i; i < lockedIds.length; ++i) assertEq(token.ownerOf(lockedIds[i]), address(token));
 
+        assertEq(token.getOwnedIds(bob), ids);
+
+        // unlock remaining locked ids
         vm.prank(bob);
         token.unlockFrom(bob, lockedIds);
 
@@ -279,6 +290,10 @@ contract ERC721MTest is Test {
         for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + quantityB + i), tester);
 
         assertEq(token.balanceOf(bob), quantityB);
+
+        assertEq(token.getOwnedIds(alice), (1).range(1 + quantityA));
+        assertEq(token.getOwnedIds(bob), (1 + quantityA).range(1 + quantityA + quantityB));
+        assertEq(token.getOwnedIds(tester), (1 + quantityA + quantityB).range(1 + quantityA + quantityB + quantityT));
     }
 
     function test_mintAndLock(
@@ -305,6 +320,8 @@ contract ERC721MTest is Test {
         uint256[] memory unlockIds = ids.randomSubset(quantityL);
         uint256[] memory lockedIds = ids.exclusion(unlockIds);
 
+        assertEq(token.getOwnedIds(bob), ids);
+
         vm.prank(bob);
         token.unlockFrom(bob, unlockIds);
 
@@ -315,6 +332,8 @@ contract ERC721MTest is Test {
         for (uint256 i; i < quantityB; ++i) assertEq(token.trueOwnerOf(1 + quantityA + i), bob);
         for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + quantityB + i), tester);
 
+        assertEq(token.getOwnedIds(bob), ids);
+
         vm.prank(bob);
         token.unlockFrom(bob, lockedIds);
 
@@ -323,6 +342,10 @@ contract ERC721MTest is Test {
         for (uint256 i; i < quantityT; ++i) assertEq(token.ownerOf(1 + quantityA + quantityB + i), tester);
 
         assertEq(token.balanceOf(bob), quantityB);
+
+        assertEq(token.getOwnedIds(alice), (1).range(1 + quantityA));
+        assertEq(token.getOwnedIds(bob), (1 + quantityA).range(1 + quantityA + quantityB));
+        assertEq(token.getOwnedIds(tester), (1 + quantityA + quantityB).range(1 + quantityA + quantityB + quantityT));
     }
 
     function test_transferFrom(
@@ -361,6 +384,11 @@ contract ERC721MTest is Test {
             token.transferFrom(oldOwner, newOwner, 1 + id);
 
             owners[id] = newOwner;
+
+            uint256[] memory foundIds = owners.filterIndices(newOwner);
+            for (uint256 j; j < foundIds.length; j++) ++foundIds[j];
+
+            assertEq(foundIds, token.getOwnedIds(newOwner));
         }
     }
 }

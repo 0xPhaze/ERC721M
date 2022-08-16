@@ -58,6 +58,10 @@ abstract contract ERC721M is EIP712Permit {
         s().symbol = symbol_;
     }
 
+    /* ------------- virtual ------------- */
+
+    function tokenURI(uint256 id) external view virtual returns (string memory);
+
     /* ------------- view ------------- */
 
     function name() external view virtual returns (string memory) {
@@ -67,8 +71,6 @@ abstract contract ERC721M is EIP712Permit {
     function symbol() external view virtual returns (string memory) {
         return s().symbol;
     }
-
-    function tokenURI(uint256 id) external view virtual returns (string memory);
 
     function balanceOf(address user) public view returns (uint256) {
         return s().userData[user].balance();
@@ -193,11 +195,11 @@ abstract contract ERC721M is EIP712Permit {
         bytes32 r,
         bytes32 s_
     ) public virtual {
-        if (_usePermit(owner, operator, 1, deadline, v, r, s_)) {
-            s().isApprovedForAll[owner][operator] = true;
+        _usePermit(owner, operator, 1, deadline, v, r, s_);
 
-            emit ApprovalForAll(owner, operator, true);
-        }
+        s().isApprovedForAll[owner][operator] = true;
+
+        emit ApprovalForAll(owner, operator, true);
     }
 
     /* ------------- internal ------------- */
