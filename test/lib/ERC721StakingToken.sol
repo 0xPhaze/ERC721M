@@ -29,17 +29,15 @@ contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
     /* ------------- external ------------- */
 
     function stake(uint256[] calldata ids) external {
-        unchecked {
-            claimReward();
+        claimReward();
 
-            for (uint256 i; i < ids.length; ++i) {
-                nft.transferFrom(msg.sender, address(this), ids[i]);
+        for (uint256 i; i < ids.length; ++i) {
+            nft.transferFrom(msg.sender, address(this), ids[i]);
 
-                ownerOf[ids[i]] = msg.sender;
-            }
-
-            stakeData[msg.sender].numStaked += uint128(ids.length);
+            ownerOf[ids[i]] = msg.sender;
         }
+
+        stakeData[msg.sender].numStaked += uint128(ids.length);
     }
 
     function unstake(uint256[] calldata ids) external {
@@ -67,11 +65,8 @@ contract ERC721StakingToken is ERC20("Token", "TKN", 18) {
     /* ------------- view ------------- */
 
     function pendingReward(address user) public view returns (uint256) {
-        unchecked {
-            return
-                (stakeData[user].numStaked * rewardDailyRate * (block.timestamp - stakeData[user].lastClaimed)) /
-                (1 days);
-        }
+        return
+            (stakeData[user].numStaked * rewardDailyRate * (block.timestamp - stakeData[user].lastClaimed)) / (1 days);
     }
 
     function numStaked(address user) external view returns (uint256) {
