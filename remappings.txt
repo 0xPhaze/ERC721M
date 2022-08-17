@@ -1,7 +1,5 @@
 ERC721M/=src/
-ERC721A/=lib/ERC721A/contracts/
 UDS/=lib/UDS/src/
 forge-std/=lib/forge-std/src/
 fx-portal/=lib/fx-portal/contracts/
-openzeppelin/=lib/openzeppelin-contracts/
 solmate/=lib/solmate/src/
