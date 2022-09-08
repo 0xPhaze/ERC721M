@@ -38,12 +38,13 @@ contract StakingNFT is ERC721MStaking, Owned {
 
     uint256 private immutable _rewardEndDate = block.timestamp + 5 * 365 days;
 
-    constructor(IERC20 token) ERC721MStaking(token) Owned(msg.sender) {}
+    constructor(
+        string memory name,
+        string memory symbol,
+        address token
+    ) ERC721M(name, symbol) ERC721MStaking(token) Owned(msg.sender) {}
 
     /* ------------- override ------------- */
-
-    string public constant override name = "My NFT";
-    string public constant override symbol = "NFT";
 
     function rewardEndDate() public view override returns (uint256) {
         return _rewardEndDate;

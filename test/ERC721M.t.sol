@@ -6,8 +6,9 @@ import "forge-std/Test.sol";
 import "./mocks/MockERC721M.sol";
 
 import {futils, random} from "futils/futils.sol";
+import {ERC1967Proxy} from "UDS/proxy/ERC1967Proxy.sol";
 
-contract ERC721MTest is Test {
+contract TestERC721M is Test {
     using futils for *;
 
     address alice = address(0xbabe);
@@ -17,7 +18,8 @@ contract ERC721MTest is Test {
     MockERC721M token;
 
     function setUp() public {
-        token = new MockERC721M("Token", "TKN");
+        address logic = address(new MockERC721M("Token", "TKN"));
+        token = MockERC721M(address(new ERC1967Proxy(logic, "")));
     }
 
     function test_setUp() public {
@@ -48,7 +50,7 @@ contract ERC721MTest is Test {
         assertEq(token.trueOwnerOf(1), tester);
     }
 
-    function test_lockUnlock_fail() public {
+    function test_lockUnlock_revert() public {
         token.mint(alice, 1);
         token.mint(tester, 1);
 
@@ -114,7 +116,7 @@ contract ERC721MTest is Test {
         for (uint256 i; i < 5; i++) assertEq(token.ownerOf(1), alice);
     }
 
-    function test_mint_fail_MintToZeroAddress() public {
+    function test_mint_revert_MintToZeroAddress() public {
         vm.expectRevert(MintToZeroAddress.selector);
         token.mint(address(0), 1);
     }
@@ -129,12 +131,12 @@ contract ERC721MTest is Test {
         assertEq(token.getApproved(1), alice);
     }
 
-    function test_approve_fail_NonexistentToken() public {
+    function test_approve_revert_NonexistentToken() public {
         vm.expectRevert(NonexistentToken.selector);
         token.approve(alice, 1);
     }
 
-    function test_approve_fail_CallerNotOwnerNorApproved() public {
+    function test_approve_revert_CallerNotOwnerNorApproved() public {
         token.mint(bob, 1);
 
         vm.expectRevert(CallerNotOwnerNorApproved.selector);
@@ -188,26 +190,26 @@ contract ERC721MTest is Test {
         assertEq(token.balanceOf(bob), 0);
     }
 
-    function test_transferFrom_fail_NonexistentToken() public {
+    function test_transferFrom_revert_NonexistentToken() public {
         vm.expectRevert(NonexistentToken.selector);
         token.transferFrom(bob, alice, 1);
     }
 
-    function test_transferFrom_fail_TransferFromIncorrectOwner() public {
+    function test_transferFrom_revert_TransferFromIncorrectOwner() public {
         token.mint(alice, 1);
 
         vm.expectRevert(TransferFromIncorrectOwner.selector);
         token.transferFrom(bob, alice, 1);
     }
 
-    function test_transferFrom_fail_TransferToZeroAddress() public {
+    function test_transferFrom_revert_TransferToZeroAddress() public {
         token.mint(tester, 1);
 
         vm.expectRevert(TransferToZeroAddress.selector);
         token.transferFrom(tester, address(0), 1);
     }
 
-    function test_transferFrom_fail_CallerNotOwnerNorApproved() public {
+    function test_transferFrom_revert_CallerNotOwnerNorApproved() public {
         token.mint(bob, 1);
 
         vm.expectRevert(CallerNotOwnerNorApproved.selector);
@@ -260,7 +262,7 @@ contract ERC721MTest is Test {
         quantityT = bound(quantityT, 1, 100);
 
         token.mint(alice, quantityA);
-        token.mintAndLock(bob, quantityB);
+        token.mint(bob, quantityB);
         token.mint(tester, quantityT);
 
         uint256[] memory ids = (1 + quantityA).range(1 + quantityA + quantityB);
@@ -269,6 +271,9 @@ contract ERC721MTest is Test {
 
         uint256[] memory unlockIds = ids.randomSubset(quantityL);
         uint256[] memory lockedIds = ids.exclusion(unlockIds);
+
+        vm.prank(bob);
+        token.lockFrom(bob, ids);
 
         assertEq(token.getOwnedIds(bob), ids);
 

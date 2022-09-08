@@ -4,19 +4,13 @@ pragma solidity >=0.8.0;
 import "ERC721M/extensions/ERC721MStaking.sol";
 
 contract MockERC721MStaking is ERC721MStaking {
-    string public override name;
-    string public override symbol;
-
     uint256 private immutable _rewardEndDate = block.timestamp + 5 * 365 days;
 
     constructor(
-        string memory name_,
-        string memory symbol_,
-        IERC20 tkn
-    ) ERC721MStaking(tkn) {
-        name = name_;
-        symbol = symbol_;
-    }
+        string memory name,
+        string memory symbol,
+        address tkn
+    ) ERC721M(name, symbol) ERC721MStaking(tkn) {}
 
     function rewardEndDate() public view override returns (uint256) {
         return _rewardEndDate;

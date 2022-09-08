@@ -4,14 +4,10 @@ pragma solidity >=0.8.0;
 import "ERC721M/ERC721M.sol";
 import "ERC721M/extensions/ERC721MQuery.sol";
 
-contract MockERC721M is ERC721M, ERC721MQuery {
-    string public override name;
-    string public override symbol;
+import "UDS/proxy/UUPSUpgrade.sol";
 
-    constructor(string memory name_, string memory symbol_) {
-        name = name_;
-        symbol = symbol_;
-    }
+contract MockERC721M is UUPSUpgrade, ERC721M, ERC721MQuery {
+    constructor(string memory name, string memory symbol) ERC721M(name, symbol) {}
 
     function mint(address to, uint256 quantity) public {
         _mint(to, quantity);
@@ -30,4 +26,6 @@ contract MockERC721M is ERC721M, ERC721MQuery {
     }
 
     function tokenURI(uint256) public pure override returns (string memory) {}
+
+    function _authorizeUpgrade() internal override {}
 }

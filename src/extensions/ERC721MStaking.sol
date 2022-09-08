@@ -45,9 +45,9 @@ library StakingDataOps {
 abstract contract ERC721MStaking is ERC721M {
     using StakingDataOps for uint256;
 
-    IERC20 public immutable token;
+    address public immutable token;
 
-    constructor(IERC20 token_) {
+    constructor(address token_) {
         token = token_;
     }
 
@@ -114,7 +114,7 @@ abstract contract ERC721MStaking is ERC721M {
             if (numStaked != 0) {
                 uint256 amount = _calculateReward(numStaked, lastClaimed);
 
-                token.mint(user, amount);
+                IERC20(token).mint(user, amount);
             }
 
             s().userData[user] = userData.setLastClaimed(block.timestamp);
