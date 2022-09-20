@@ -124,7 +124,7 @@ abstract contract ERC721MStaking is ERC721M {
     function _mintAndStake(address to, uint256 quantity) internal virtual {
         _claimReward(to);
 
-        _mintAndLock(to, quantity, true);
+        _mintAndLock(to, quantity, true, 0);
 
         s().userData[to] = s().userData[to].increaseNumStaked(quantity);
     }

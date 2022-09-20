@@ -7,14 +7,44 @@ import "ERC721M/extensions/ERC721MQuery.sol";
 import "UDS/proxy/UUPSUpgrade.sol";
 
 contract MockERC721M is UUPSUpgrade, ERC721M, ERC721MQuery {
+    using TokenDataOps for uint256;
+
     constructor(string memory name, string memory symbol) ERC721M(name, symbol) {}
+
+    function getLockStart(uint256 id) public view returns (uint256) {
+        return _getLockStart(id);
+    }
+
+    function getAux(uint256 id) public view returns (uint256) {
+        return _getAux(id);
+    }
+
+    function setAux(uint256 id, uint48 aux) public {
+        _setAux(id, aux);
+    }
 
     function mint(address to, uint256 quantity) public {
         _mint(to, quantity);
     }
 
+    function mintWithAux(
+        address to,
+        uint256 quantity,
+        uint48 aux
+    ) public {
+        _mintAndLock(to, quantity, false, aux);
+    }
+
     function mintAndLock(address to, uint256 quantity) public {
-        _mintAndLock(to, quantity, true);
+        _mintAndLock(to, quantity, true, 0);
+    }
+
+    function mintAndLockWithAux(
+        address to,
+        uint256 quantity,
+        uint48 aux
+    ) public {
+        _mintAndLock(to, quantity, true, aux);
     }
 
     function lockFrom(address from, uint256[] calldata tokenIds) public {

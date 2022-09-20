@@ -54,15 +54,15 @@ library UserDataOps {
         }
     }
 
-    /* ------------- lockStart: [60, 100) ------------- */
+    // /* ------------- lockStart: [60, 100) ------------- */
 
-    function lockStart(uint256 userData) internal pure returns (uint256) {
-        return (userData >> 60) & 0xFFFFFFFFFF;
-    }
+    // function lockStart(uint256 userData) internal pure returns (uint256) {
+    //     return (userData >> 60) & 0xFFFFFFFFFF;
+    // }
 
-    function setLockStart(uint256 userData, uint256 timestamp) internal pure returns (uint256) {
-        return (userData & ~uint256(0xFFFFFFFFFF << 60)) | (timestamp << 60);
-    }
+    // function setLockStart(uint256 userData, uint256 timestamp) internal pure returns (uint256) {
+    //     return (userData & ~uint256(0xFFFFFFFFFF << 60)) | (timestamp << 60);
+    // }
 
     // /* ------------- aux: [100, 256) ------------- */
 
@@ -76,8 +76,11 @@ library UserDataOps {
 }
 
 library TokenDataOps {
+    /// @dev Big question whether copy should transfer over data, such as,
+    ///      aux data and timestamps
     function copy(uint256 tokenData) internal pure returns (uint256) {
-        return tokenData & ((uint256(1) << (160 + (((tokenData >> 160) & 1) << 1))) - 1);
+        return tokenData;
+        // return tokenData & ((uint256(1) << (160 + (((tokenData >> 160) & 1) << 1))) - 1);
     }
 
     /// ^ equivalent code:
@@ -124,12 +127,12 @@ library TokenDataOps {
         return ((tokenData >> 161) & uint256(1)) != 0; // Note: this is not masked and can carry over when calling 'ownerOf'
     }
 
-    function lock(uint256 tokenData) internal pure returns (uint256) {
-        return tokenData | (uint256(1) << 161);
+    function lock(uint256 tokenData) internal view returns (uint256) {
+        return setLockStart(tokenData, block.timestamp) | (uint256(1) << 161);
     }
 
-    function unlock(uint256 tokenData) internal pure returns (uint256) {
-        return tokenData & ~(uint256(1) << 161);
+    function unlock(uint256 tokenData) internal view returns (uint256) {
+        return setLockStart(tokenData, block.timestamp) & ~(uint256(1) << 161);
     }
 
     /* ------------- nextTokenDataSet: [162, 163) ------------- */
@@ -142,9 +145,23 @@ library TokenDataOps {
         return tokenData | (uint256(1) << 162); // nextTokenDatatSet flag (don't repeat the read/write)
     }
 
-    // /* ------------- aux: [168, 256) ------------- */
+    /* ------------- lockStart: [168, 208) ------------- */
 
-    // function aux(uint256 tokenData) internal pure returns (uint256) {
-    //     return (tokenData >> 168) & 0xFFFFFFFFFFFFFFFFFFFFFF;
-    // }
+    function lockStart(uint256 tokenData) internal pure returns (uint256) {
+        return (tokenData >> 168) & 0xFFFFFFFFFF;
+    }
+
+    function setLockStart(uint256 tokenData, uint256 timestamp) internal pure returns (uint256) {
+        return (tokenData & ~uint256(0xFFFFFFFFFF << 168)) | (timestamp << 168);
+    }
+
+    /* ------------- aux: [208, 256) ------------- */
+
+    function aux(uint256 tokenData) internal pure returns (uint256) {
+        return tokenData >> 208;
+    }
+
+    function setAux(uint256 tokenData, uint256 auxData) internal pure returns (uint256) {
+        return (tokenData & ~uint256(0xFFFFFFFFFFFF << 208)) | (auxData << 208);
+    }
 }

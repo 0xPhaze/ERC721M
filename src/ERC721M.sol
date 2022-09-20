@@ -10,10 +10,10 @@ struct ERC721MStorage {
     string name;
     string symbol;
     uint256 totalSupply;
+    mapping(address => uint256) userData;
+    mapping(uint256 => uint256) tokenData;
     mapping(uint256 => address) getApproved;
     mapping(address => mapping(address => bool)) isApprovedForAll;
-    mapping(uint256 => uint256) tokenData;
-    mapping(address => uint256) userData;
 }
 
 bytes32 constant DIAMOND_STORAGE_ERC721M_LOCKABLE = keccak256("diamond.storage.erc721m.lockable");
@@ -151,8 +151,8 @@ abstract contract ERC721M is EIP712PermitUDS {
             s().isApprovedForAll[from][msg.sender] ||
             s().getApproved[id] == msg.sender);
 
-        if (tokenData.owner(warden()) != from) revert TransferFromIncorrectOwner();
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
+        if (tokenData.owner(warden()) != from) revert TransferFromIncorrectOwner();
 
         delete s().getApproved[id];
 
@@ -162,8 +162,8 @@ abstract contract ERC721M is EIP712PermitUDS {
 
         s().tokenData[id] = tokenData.setOwner(to).flagNextTokenDataSet();
 
-        s().userData[from] = s().userData[from].decreaseBalance(1);
         s().userData[to] = s().userData[to].increaseBalance(1);
+        s().userData[from] = s().userData[from].decreaseBalance(1);
 
         emit Transfer(from, to, id);
     }
@@ -216,7 +216,7 @@ abstract contract ERC721M is EIP712PermitUDS {
         return startingIndex + s().totalSupply;
     }
 
-    function _tokenDataOf(uint256 id) internal view virtual returns (uint256) {
+    function _tokenDataOf(uint256 id) internal view virtual returns (uint256 out) {
         if (!_exists(id)) revert NonexistentToken();
 
         unchecked {
@@ -228,9 +228,14 @@ abstract contract ERC721M is EIP712PermitUDS {
                 if (tokenData != 0) return curr == id ? tokenData : tokenData.copy();
             }
         }
+    }
 
-        // unreachable
-        return 0;
+    function _getLockStart(uint256 id) internal view returns (uint256) {
+        return _tokenDataOf(id).lockStart();
+    }
+
+    function _getAux(uint256 id) internal view returns (uint256) {
+        return _tokenDataOf(id).aux();
     }
 
     function _ensureTokenDataSet(uint256 id, uint256 tokenData) internal virtual {
@@ -238,13 +243,14 @@ abstract contract ERC721M is EIP712PermitUDS {
     }
 
     function _mint(address to, uint256 quantity) internal virtual {
-        _mintAndLock(to, quantity, false);
+        _mintAndLock(to, quantity, false, 0);
     }
 
     function _mintAndLock(
         address to,
         uint256 quantity,
-        bool lock
+        bool lock,
+        uint256 auxData
     ) internal virtual {
         unchecked {
             if (to == address(0)) revert MintToZeroAddress();
@@ -253,7 +259,7 @@ abstract contract ERC721M is EIP712PermitUDS {
             uint256 supply = s().totalSupply;
             uint256 startTokenId = startingIndex + supply;
 
-            uint256 tokenData = uint160(to);
+            uint256 tokenData = uint256(uint160(to)).setAux(auxData);
             if (lock) tokenData = tokenData.setConsecutiveLocked().lock();
 
             // don't have to care about next token data if only minting one
@@ -271,7 +277,9 @@ abstract contract ERC721M is EIP712PermitUDS {
                     emit Transfer(to, warden(), id);
                 }
             } else {
-                for (uint256 i; i < quantity; ++i) emit Transfer(address(0), to, startTokenId + i);
+                for (uint256 i; i < quantity; ++i) {
+                    emit Transfer(address(0), to, startTokenId + i);
+                }
             }
 
             // @note: to reduce gas costs, user numLocked is not tracked, balances stay constant when locking
@@ -280,6 +288,16 @@ abstract contract ERC721M is EIP712PermitUDS {
 
             s().totalSupply = supply + quantity;
         }
+    }
+
+    function _setAux(uint256 id, uint48 aux) internal virtual {
+        uint256 tokenData = _tokenDataOf(id);
+
+        unchecked {
+            _ensureTokenDataSet(id + 1, tokenData);
+        }
+
+        s().tokenData[id] = tokenData.setAux(aux);
     }
 
     function _lock(address from, uint256 id) internal virtual {
@@ -294,13 +312,11 @@ abstract contract ERC721M is EIP712PermitUDS {
 
         delete s().getApproved[id];
 
-        s().tokenData[id] = tokenData.lock();
-
         unchecked {
             _ensureTokenDataSet(id + 1, tokenData);
-
-            tokenData = tokenData.unsetConsecutiveLocked().flagNextTokenDataSet();
         }
+
+        s().tokenData[id] = tokenData.lock().unsetConsecutiveLocked().flagNextTokenDataSet();
 
         // @note: to reduce gas costs, user numLocked is not tracked, balances stay constant when locking
         // s().userData[from] = s().userData[from].decreaseBalance(1).increaseNumLocked(1).setLockStart(block.timestamp);
