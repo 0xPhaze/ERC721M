@@ -216,6 +216,10 @@ abstract contract ERC721M is EIP712PermitUDS {
         return startingIndex + s().totalSupply;
     }
 
+    function _increaseTotalSupply(uint256 amount) internal virtual {
+        if (amount != 0) s().totalSupply = _nextTokenId() + amount - 1;
+    }
+
     function _tokenDataOf(uint256 id) internal view virtual returns (uint256 out) {
         if (!_exists(id)) revert NonexistentToken();
 
@@ -249,23 +253,29 @@ abstract contract ERC721M is EIP712PermitUDS {
     function _mintAndLock(
         address to,
         uint256 quantity,
+        bool lock
+    ) internal virtual {
+        _mintAndLock(to, quantity, lock, 0);
+    }
+
+    function _mintAndLock(
+        address to,
+        uint256 quantity,
         bool lock,
-        uint256 auxData
+        uint48 auxData
     ) internal virtual {
         unchecked {
-            if (to == address(0)) revert MintToZeroAddress();
             if (quantity == 0) revert MintZeroQuantity();
+            if (to == address(0)) revert MintToZeroAddress();
 
-            uint256 supply = s().totalSupply;
-            uint256 startTokenId = startingIndex + supply;
-
+            uint256 startTokenId = _nextTokenId();
             uint256 tokenData = uint256(uint160(to)).setAux(auxData);
-            if (lock) tokenData = tokenData.setConsecutiveLocked().lock();
 
             // don't have to care about next token data if only minting one
             if (quantity == 1) tokenData = tokenData.flagNextTokenDataSet();
-
             if (lock) {
+                tokenData = tokenData.setConsecutiveLocked().lock();
+
                 // @note: to reduce gas costs when locking individually, user numLocked is not tracked
                 // userData = userData.increaseNumLocked(quantity).setLockStart(block.timestamp);
 
@@ -286,7 +296,7 @@ abstract contract ERC721M is EIP712PermitUDS {
             s().userData[to] = s().userData[to].increaseNumMinted(quantity).increaseBalance(quantity);
             s().tokenData[startTokenId] = tokenData;
 
-            s().totalSupply = supply + quantity;
+            _increaseTotalSupply(quantity);
         }
     }
 
