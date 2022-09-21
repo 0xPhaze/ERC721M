@@ -250,6 +250,14 @@ abstract contract ERC721M is EIP712PermitUDS {
         _mintAndLock(to, quantity, false, 0);
     }
 
+    function _mint(
+        address to,
+        uint256 quantity,
+        uint48 auxData
+    ) internal virtual {
+        _mintAndLock(to, quantity, false, auxData);
+    }
+
     function _mintAndLock(
         address to,
         uint256 quantity,
