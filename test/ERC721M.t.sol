@@ -75,7 +75,9 @@ contract TestERC721M is Test {
             assertEq(token.getLockStart(ids[i]), lockStart);
         }
 
+        assertEq(token.numLocked(owner), ids.length);
         assertEq(token.getLockedIds(owner), ids);
+        assertEq(token.getLockStart(owner), lockStart);
         assertTrue(ids.isSubset(token.getOwnedIds(owner)));
     }
 
@@ -94,6 +96,8 @@ contract TestERC721M is Test {
             assertEq(token.getLockStart(ids[i]), lockStart);
         }
 
+        assertEq(token.numLocked(owner), token.balanceOf(owner) - ids.length);
+        assertEq(token.getLockStart(owner), lockStart);
         assertEq(token.getUnlockedIds(owner), ids);
         assertTrue(ids.isSubset(token.getOwnedIds(owner)));
     }

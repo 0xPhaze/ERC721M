@@ -11,14 +11,6 @@ contract MockERC721M is UUPSUpgrade, ERC721M, ERC721MQuery {
 
     constructor(string memory name, string memory symbol) ERC721M(name, symbol) {}
 
-    function getLockStart(uint256 id) public view returns (uint256) {
-        return _getLockStart(id);
-    }
-
-    function getAux(uint256 id) public view returns (uint256) {
-        return _getAux(id);
-    }
-
     function setAux(uint256 id, uint48 aux) public {
         _setAux(id, aux);
     }

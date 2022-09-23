@@ -80,9 +80,9 @@ library TokenDataOps {
     ///      aux data and timestamps
     function copy(uint256 tokenData) internal pure returns (uint256) {
         return tokenData;
-        // return tokenData & ((uint256(1) << (160 + (((tokenData >> 160) & 1) << 1))) - 1);
     }
 
+    // return tokenData & ((uint256(1) << (160 + (((tokenData >> 160) & 1) << 1))) - 1);
     /// ^ equivalent code:
     // function copy2(uint256 tokenData) internal pure returns (uint256) {
     //     uint256 copiedData = uint160(tokenData);
@@ -95,8 +95,8 @@ library TokenDataOps {
 
     /* ------------- owner: [0, 160) ------------- */
 
-    function owner(uint256 tokenData, address warden) internal pure returns (address) {
-        return locked(tokenData) ? warden : trueOwner(tokenData);
+    function owner(uint256 tokenData) internal view returns (address) {
+        return locked(tokenData) ? address(this) : trueOwner(tokenData);
     }
 
     function setOwner(uint256 tokenData, address owner_) internal pure returns (uint256) {
