@@ -34,8 +34,6 @@ library UserDataOps {
         }
     }
 
-    /// used in extensions
-
     /* ------------- numLocked: [40, 60) ------------- */
 
     function numLocked(uint256 userData) internal pure returns (uint256) {
@@ -54,15 +52,15 @@ library UserDataOps {
         }
     }
 
-    // /* ------------- lockStart: [60, 100) ------------- */
+    /* ------------- lockStart: [60, 100) ------------- */
 
-    // function lockStart(uint256 userData) internal pure returns (uint256) {
-    //     return (userData >> 60) & 0xFFFFFFFFFF;
-    // }
+    function userLockStart(uint256 userData) internal pure returns (uint256) {
+        return (userData >> 60) & 0xFFFFFFFFFF;
+    }
 
-    // function setLockStart(uint256 userData, uint256 timestamp) internal pure returns (uint256) {
-    //     return (userData & ~uint256(0xFFFFFFFFFF << 60)) | (timestamp << 60);
-    // }
+    function setUserLockStart(uint256 userData, uint256 timestamp) internal pure returns (uint256) {
+        return (userData & ~uint256(0xFFFFFFFFFF << 60)) | (timestamp << 60);
+    }
 
     // /* ------------- aux: [100, 256) ------------- */
 
@@ -128,11 +126,11 @@ library TokenDataOps {
     }
 
     function lock(uint256 tokenData) internal view returns (uint256) {
-        return setLockStart(tokenData, block.timestamp) | (uint256(1) << 161);
+        return setTokenLockStart(tokenData, block.timestamp) | (uint256(1) << 161);
     }
 
     function unlock(uint256 tokenData) internal view returns (uint256) {
-        return setLockStart(tokenData, block.timestamp) & ~(uint256(1) << 161);
+        return setTokenLockStart(tokenData, block.timestamp) & ~(uint256(1) << 161);
     }
 
     /* ------------- nextTokenDataSet: [162, 163) ------------- */
@@ -147,11 +145,11 @@ library TokenDataOps {
 
     /* ------------- lockStart: [168, 208) ------------- */
 
-    function lockStart(uint256 tokenData) internal pure returns (uint256) {
+    function tokenLockStart(uint256 tokenData) internal pure returns (uint256) {
         return (tokenData >> 168) & 0xFFFFFFFFFF;
     }
 
-    function setLockStart(uint256 tokenData, uint256 timestamp) internal pure returns (uint256) {
+    function setTokenLockStart(uint256 tokenData, uint256 timestamp) internal pure returns (uint256) {
         return (tokenData & ~uint256(0xFFFFFFFFFF << 168)) | (timestamp << 168);
     }
 

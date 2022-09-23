@@ -13,3 +13,6 @@
 [submodule "lib/futils"]
 	path = lib/futils
 	url = https://github.com/0xPhaze/futils
+[submodule "lib/fx-contracts"]
+	path = lib/fx-contracts
+	url = https://github.com/0xPhaze/fx-contracts

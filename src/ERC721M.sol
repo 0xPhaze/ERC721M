@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ERC721MLibrary.sol";
 import {EIP712PermitUDS} from "UDS/auth/EIP712PermitUDS.sol";
+import {UserDataOps, TokenDataOps} from "./ERC721MLibrary.sol";
 
 // ------------- storage
 
@@ -101,7 +101,7 @@ abstract contract ERC721M is EIP712PermitUDS {
     }
 
     function getLockStart(uint256 id) public view returns (uint256) {
-        return _tokenDataOf(id).lockStart();
+        return _tokenDataOf(id).tokenLockStart();
     }
 
     function numMinted(address user) public view virtual returns (uint256) {
@@ -113,7 +113,7 @@ abstract contract ERC721M is EIP712PermitUDS {
     }
 
     function getLockStart(address user) public view virtual returns (uint256) {
-        return s().userData[user].lockStart();
+        return s().userData[user].userLockStart();
     }
 
     function trueOwnerOf(uint256 id) public view virtual returns (address) {
@@ -242,7 +242,6 @@ abstract contract ERC721M is EIP712PermitUDS {
                 tokenData = s().tokenData[curr];
 
                 if (tokenData != 0) return tokenData;
-                // if (tokenData != 0) return curr == id ? tokenData : tokenData.copy();
             }
         }
     }
@@ -290,7 +289,7 @@ abstract contract ERC721M is EIP712PermitUDS {
             if (lock) {
                 tokenData = tokenData.setConsecutiveLocked().lock();
 
-                userData = userData.increaseNumLocked(quantity).setLockStart(block.timestamp);
+                userData = userData.increaseNumLocked(quantity).setUserLockStart(block.timestamp);
 
                 for (uint256 i; i < quantity; ++i) {
                     emit Transfer(address(0), to, startTokenId + i);
@@ -336,7 +335,7 @@ abstract contract ERC721M is EIP712PermitUDS {
         }
 
         s().tokenData[id] = tokenData.lock().unsetConsecutiveLocked().flagNextTokenDataSet();
-        s().userData[from] = s().userData[from].increaseNumLocked(1).setLockStart(block.timestamp);
+        s().userData[from] = s().userData[from].increaseNumLocked(1).setUserLockStart(block.timestamp);
 
         emit Transfer(from, address(this), id);
     }
@@ -363,7 +362,7 @@ abstract contract ERC721M is EIP712PermitUDS {
         }
 
         s().tokenData[id] = tokenData.unlock();
-        s().userData[from] = s().userData[from].decreaseNumLocked(1).setLockStart(block.timestamp);
+        s().userData[from] = s().userData[from].decreaseNumLocked(1).setUserLockStart(block.timestamp);
 
         emit Transfer(address(this), from, id);
     }
