@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ERC721M} from "ERC721M/ERC721M.sol";
+import {ERC721M} from "../ERC721M.sol";
+import {ERC721MQuery} from "./ERC721MQuery.sol";
 import {FxERC721Root} from "fx-contracts/FxERC721Root.sol";
-import {ERC721MQuery} from "ERC721M/extensions/ERC721MQuery.sol";
 
 /// @title ERC721M FxPortal extension
 /// @author phaze (https://github.com/0xPhaze/ERC721M)
