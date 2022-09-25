@@ -225,7 +225,7 @@ abstract contract ERC721M is EIP712PermitUDS {
     }
 
     function _nextTokenId() internal view virtual returns (uint256) {
-        return startingIndex + s().totalSupply;
+        return startingIndex + totalSupply();
     }
 
     function _increaseTotalSupply(uint256 amount) internal virtual {
