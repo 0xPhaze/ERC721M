@@ -526,12 +526,10 @@ contract TestERC721M is Test {
         uint256 quantityB,
         uint256 quantityE,
         uint256 quantityL,
-        uint256 n,
+        address[] calldata nextOwners,
         uint256 seed
     ) public {
         random.seed(seed);
-
-        n = bound(n, 1, 100);
 
         test_mintAndLock(quantityA, quantityB, quantityE, quantityL, seed);
 
@@ -552,12 +550,14 @@ contract TestERC721M is Test {
         for (uint256 i; i < quantityB; ++i) auxData[quantityA + i] = auxB;
         for (uint256 i; i < quantityE; ++i) auxData[quantityA + quantityB + i] = auxE;
 
-        for (uint256 i; i < n; ++i) {
+        for (uint256 i; i < nextOwners.length; ++i) {
             uint256 id = random.next(totalSupply);
             uint48 randomAux = uint48(uint256(random.next(totalSupply)));
 
             address oldOwner = owners[id];
-            address newOwner = random.nextAddress();
+            address newOwner = nextOwners[i];
+
+            if (newOwner == address(0)) continue;
 
             vm.prank(oldOwner);
             token.transferFrom(oldOwner, newOwner, 1 + id);
