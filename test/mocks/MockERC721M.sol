@@ -49,5 +49,5 @@ contract MockERC721M is UUPSUpgrade, ERC721M, ERC721MQuery {
 
     function tokenURI(uint256) public pure override returns (string memory) {}
 
-    function _authorizeUpgrade() internal override {}
+    function _authorizeUpgrade(address) internal override {}
 }

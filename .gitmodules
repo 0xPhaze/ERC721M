@@ -4,9 +4,6 @@
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/brockelmore/forge-std
-[submodule "lib/UDS"]
-	path = lib/UDS
-	url = https://github.com/0xPhaze/UDS
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
@@ -16,3 +13,6 @@
 [submodule "lib/fx-contracts"]
 	path = lib/fx-contracts
 	url = https://github.com/0xPhaze/fx-contracts
+[submodule "lib/UDS"]
+	path = lib/UDS
+	url = https://github.com/0xPhaze/UDS
