@@ -20,7 +20,9 @@ bytes32 constant DIAMOND_STORAGE_ERC721M_LOCKABLE = keccak256("diamond.storage.e
 
 function s() pure returns (ERC721MStorage storage diamondStorage) {
     bytes32 slot = DIAMOND_STORAGE_ERC721M_LOCKABLE;
-    assembly { diamondStorage.slot := slot } // prettier-ignore
+    assembly {
+        diamondStorage.slot := slot
+    }
 }
 
 // ------------- errors
@@ -121,10 +123,9 @@ abstract contract ERC721M is EIP712PermitUDS {
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
-        return
-            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
-            interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
-            interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+        return interfaceId == 0x01ffc9a7 // ERC165 Interface ID for ERC165
+            || interfaceId == 0x80ac58cd // ERC165 Interface ID for ERC721
+            || interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
     }
 
     /* ------------- public ------------- */
@@ -149,19 +150,14 @@ abstract contract ERC721M is EIP712PermitUDS {
         return (msg.sender == from || s().isApprovedForAll[from][msg.sender] || s().getApproved[id] == msg.sender);
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 id
-    ) public virtual {
+    function transferFrom(address from, address to, uint256 id) public virtual {
         if (to == address(this)) revert TransferFromInvalidTo();
         if (to == address(0)) revert TransferToZeroAddress();
 
         uint256 tokenData = _tokenDataOf(id);
 
-        bool isApprovedOrOwner = (msg.sender == from ||
-            s().isApprovedForAll[from][msg.sender] ||
-            s().getApproved[id] == msg.sender);
+        bool isApprovedOrOwner =
+            (msg.sender == from || s().isApprovedForAll[from][msg.sender] || s().getApproved[id] == msg.sender);
 
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
         if (tokenData.owner() != from) revert TransferFromIncorrectOwner();
@@ -180,37 +176,21 @@ abstract contract ERC721M is EIP712PermitUDS {
         emit Transfer(from, to, id);
     }
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id
-    ) public virtual {
+    function safeTransferFrom(address from, address to, uint256 id) public virtual {
         safeTransferFrom(from, to, id, "");
     }
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id,
-        bytes memory data
-    ) public virtual {
+    function safeTransferFrom(address from, address to, uint256 id, bytes memory data) public virtual {
         transferFrom(from, to, id);
         if (
-            to.code.length != 0 &&
-            IERC721Receiver(to).onERC721Received(msg.sender, from, id, data) !=
-            IERC721Receiver(to).onERC721Received.selector
+            to.code.length != 0
+                && IERC721Receiver(to).onERC721Received(msg.sender, from, id, data)
+                    != IERC721Receiver(to).onERC721Received.selector
         ) revert TransferToNonERC721Receiver();
     }
 
     // EIP-4494 permit; differs from the current EIP
-    function permit(
-        address owner,
-        address operator,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s_
-    ) public virtual {
+    function permit(address owner, address operator, uint256 deadline, uint8 v, bytes32 r, bytes32 s_) public virtual {
         _usePermit(owner, operator, 1, deadline, v, r, s_);
 
         s().isApprovedForAll[owner][operator] = true;
@@ -238,7 +218,7 @@ abstract contract ERC721M is EIP712PermitUDS {
         unchecked {
             uint256 tokenData;
 
-            for (uint256 curr = id; ; curr--) {
+            for (uint256 curr = id;; curr--) {
                 tokenData = s().tokenData[curr];
 
                 if (tokenData != 0) return tokenData;
@@ -254,28 +234,15 @@ abstract contract ERC721M is EIP712PermitUDS {
         _mintAndLock(to, quantity, false, 0);
     }
 
-    function _mint(
-        address to,
-        uint256 quantity,
-        uint48 auxData
-    ) internal virtual {
+    function _mint(address to, uint256 quantity, uint48 auxData) internal virtual {
         _mintAndLock(to, quantity, false, auxData);
     }
 
-    function _mintAndLock(
-        address to,
-        uint256 quantity,
-        bool lock
-    ) internal virtual {
+    function _mintAndLock(address to, uint256 quantity, bool lock) internal virtual {
         _mintAndLock(to, quantity, lock, 0);
     }
 
-    function _mintAndLock(
-        address to,
-        uint256 quantity,
-        bool lock,
-        uint48 auxData
-    ) internal virtual {
+    function _mintAndLock(address to, uint256 quantity, bool lock, uint48 auxData) internal virtual {
         unchecked {
             if (quantity == 0) revert MintZeroQuantity();
             if (to == address(0)) revert MintToZeroAddress();
@@ -321,9 +288,8 @@ abstract contract ERC721M is EIP712PermitUDS {
     function _lock(address from, uint256 id) internal virtual {
         uint256 tokenData = _tokenDataOf(id);
 
-        bool isApprovedOrOwner = (msg.sender == from ||
-            s().isApprovedForAll[from][msg.sender] ||
-            s().getApproved[id] == msg.sender);
+        bool isApprovedOrOwner =
+            (msg.sender == from || s().isApprovedForAll[from][msg.sender] || s().getApproved[id] == msg.sender);
 
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
         if (tokenData.owner() != from) revert IncorrectOwner();
@@ -343,9 +309,8 @@ abstract contract ERC721M is EIP712PermitUDS {
     function _unlock(address from, uint256 id) internal virtual {
         uint256 tokenData = _tokenDataOf(id);
 
-        bool isApprovedOrOwner = (msg.sender == from ||
-            s().isApprovedForAll[from][msg.sender] ||
-            s().getApproved[id] == msg.sender);
+        bool isApprovedOrOwner =
+            (msg.sender == from || s().isApprovedForAll[from][msg.sender] || s().getApproved[id] == msg.sender);
 
         if (!isApprovedOrOwner) revert CallerNotOwnerNorApproved();
         if (!tokenData.locked()) revert TokenIdUnlocked();
@@ -369,10 +334,7 @@ abstract contract ERC721M is EIP712PermitUDS {
 }
 
 interface IERC721Receiver {
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 id,
-        bytes calldata data
-    ) external returns (bytes4);
+    function onERC721Received(address operator, address from, uint256 id, bytes calldata data)
+        external
+        returns (bytes4);
 }

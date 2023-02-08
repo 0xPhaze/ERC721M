@@ -42,12 +42,7 @@ contract TestERC721M is Test {
 
     /* ------------- helper ------------- */
 
-    function assertIdsOwned(
-        address owner,
-        uint256[] memory ids,
-        uint256 lockStart,
-        uint256 dataAux
-    ) internal {
+    function assertIdsOwned(address owner, uint256[] memory ids, uint256 lockStart, uint256 dataAux) internal {
         uint256 length = ids.length;
 
         for (uint256 i; i < length; ++i) {
@@ -60,12 +55,7 @@ contract TestERC721M is Test {
         assertEq(token.getOwnedIds(owner), ids);
     }
 
-    function assertIdsLocked(
-        address owner,
-        uint256[] memory ids,
-        uint256 lockStart,
-        uint256 dataAux
-    ) internal {
+    function assertIdsLocked(address owner, uint256[] memory ids, uint256 lockStart, uint256 dataAux) internal {
         uint256 length = ids.length;
 
         for (uint256 i; i < length; ++i) {
@@ -81,12 +71,7 @@ contract TestERC721M is Test {
         assertTrue(ids.isSubset(token.getOwnedIds(owner)));
     }
 
-    function assertIdsUnlocked(
-        address owner,
-        uint256[] memory ids,
-        uint256 lockStart,
-        uint256 dataAux
-    ) internal {
+    function assertIdsUnlocked(address owner, uint256[] memory ids, uint256 lockStart, uint256 dataAux) internal {
         uint256 length = ids.length;
 
         for (uint256 i; i < length; ++i) {
@@ -374,11 +359,7 @@ contract TestERC721M is Test {
 
     /* ------------- fuzz ------------- */
 
-    function test_mint(
-        uint256 quantityA,
-        uint256 quantityB,
-        uint256 quantityE
-    ) public {
+    function test_mint(uint256 quantityA, uint256 quantityB, uint256 quantityE) public {
         quantityA = bound(quantityA, 1, 100);
         quantityB = bound(quantityB, 1, 100);
         quantityE = bound(quantityE, 1, 100);
@@ -402,13 +383,9 @@ contract TestERC721M is Test {
         assertEq(token.totalSupply(), quantityA + quantityB + quantityE);
     }
 
-    function test_lock(
-        uint256 quantityA,
-        uint256 quantityB,
-        uint256 quantityE,
-        uint256 quantityL,
-        uint256 seed
-    ) public {
+    function test_lock(uint256 quantityA, uint256 quantityB, uint256 quantityE, uint256 quantityL, uint256 seed)
+        public
+    {
         random.seed(seed);
 
         quantityA = bound(quantityA, 1, 100);
@@ -465,13 +442,9 @@ contract TestERC721M is Test {
         assertEq(token.totalNumLocked(), 0);
     }
 
-    function test_mintAndLock(
-        uint256 quantityA,
-        uint256 quantityB,
-        uint256 quantityE,
-        uint256 quantityL,
-        uint256 seed
-    ) public {
+    function test_mintAndLock(uint256 quantityA, uint256 quantityB, uint256 quantityE, uint256 quantityL, uint256 seed)
+        public
+    {
         random.seed(seed);
 
         quantityA = bound(quantityA, 1, 100);
@@ -542,13 +515,25 @@ contract TestERC721M is Test {
         uint48[] memory auxData = new uint48[](totalSupply);
         address[] memory owners = new address[](totalSupply);
 
-        for (uint256 i; i < quantityA; ++i) owners[i] = alice;
-        for (uint256 i; i < quantityB; ++i) owners[quantityA + i] = bob;
-        for (uint256 i; i < quantityE; ++i) owners[quantityA + quantityB + i] = eve;
+        for (uint256 i; i < quantityA; ++i) {
+            owners[i] = alice;
+        }
+        for (uint256 i; i < quantityB; ++i) {
+            owners[quantityA + i] = bob;
+        }
+        for (uint256 i; i < quantityE; ++i) {
+            owners[quantityA + quantityB + i] = eve;
+        }
 
-        for (uint256 i; i < quantityA; ++i) auxData[i] = auxA;
-        for (uint256 i; i < quantityB; ++i) auxData[quantityA + i] = auxB;
-        for (uint256 i; i < quantityE; ++i) auxData[quantityA + quantityB + i] = auxE;
+        for (uint256 i; i < quantityA; ++i) {
+            auxData[i] = auxA;
+        }
+        for (uint256 i; i < quantityB; ++i) {
+            auxData[quantityA + i] = auxB;
+        }
+        for (uint256 i; i < quantityE; ++i) {
+            auxData[quantityA + quantityB + i] = auxE;
+        }
 
         for (uint256 i; i < nextOwners.length; ++i) {
             uint256 id = random.next(totalSupply);
@@ -558,6 +543,7 @@ contract TestERC721M is Test {
             address newOwner = nextOwners[i];
 
             if (newOwner == address(0)) continue;
+            if (newOwner == address(token)) continue;
 
             vm.prank(oldOwner);
             token.transferFrom(oldOwner, newOwner, 1 + id);
@@ -568,7 +554,9 @@ contract TestERC721M is Test {
 
             uint256[] memory newOwnerIds = owners.filterIndices(newOwner);
 
-            for (uint256 j; j < newOwnerIds.length; j++) ++newOwnerIds[j];
+            for (uint256 j; j < newOwnerIds.length; j++) {
+                ++newOwnerIds[j];
+            }
 
             assertEq(token.getOwnedIds(newOwner), newOwnerIds);
             assertEq(token.getLockedIds(newOwner), new uint256[](0));

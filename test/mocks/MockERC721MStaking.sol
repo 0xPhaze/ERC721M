@@ -2,15 +2,16 @@
 pragma solidity >=0.8.0;
 
 import "ERC721M/extensions/ERC721MStaking.sol";
+import {EIP712PermitUDS} from "UDS/auth/EIP712PermitUDS.sol";
 
 contract MockERC721MStaking is ERC721MStaking {
     uint256 private immutable _rewardEndDate = block.timestamp + 5 * 365 days;
 
-    constructor(
-        string memory name,
-        string memory symbol,
-        address tkn
-    ) ERC721M(name, symbol) ERC721MStaking(tkn) {}
+    constructor(string memory name, string memory symbol, address tkn)
+        ERC721M(name, symbol)
+        ERC721MStaking(tkn)
+        EIP712PermitUDS(name, symbol)
+    {}
 
     function rewardEndDate() public view override returns (uint256) {
         return _rewardEndDate;

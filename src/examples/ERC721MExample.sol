@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "solmate/auth/Owned.sol";
 import "./lib/LibString.sol";
 import "./lib/LibECDSA.sol";
+import {EIP712PermitUDS} from "UDS/auth/EIP712PermitUDS.sol";
 
 import "../extensions/ERC721MStaking.sol";
 
@@ -38,11 +39,12 @@ contract StakingNFT is ERC721MStaking, Owned {
 
     uint256 private immutable _rewardEndDate = block.timestamp + 5 * 365 days;
 
-    constructor(
-        string memory name,
-        string memory symbol,
-        address token
-    ) ERC721M(name, symbol) ERC721MStaking(token) Owned(msg.sender) {}
+    constructor(string memory name, string memory symbol, address token)
+        ERC721M(name, symbol)
+        ERC721MStaking(token)
+        EIP712PermitUDS(name, symbol)
+        Owned(msg.sender)
+    {}
 
     /* ------------- override ------------- */
 
@@ -73,12 +75,11 @@ contract StakingNFT is ERC721MStaking, Owned {
         else _mint(msg.sender, quantity);
     }
 
-    function whitelistMint(
-        uint256 quantity,
-        bool lock,
-        uint256 limit,
-        bytes calldata signature
-    ) external payable onlyEOA {
+    function whitelistMint(uint256 quantity, bool lock, uint256 limit, bytes calldata signature)
+        external
+        payable
+        onlyEOA
+    {
         if (!validSignature(signature, limit)) revert InvalidSignature();
         if (msg.value != whitelistPrice * quantity) revert IncorrectValue();
         if (totalSupply() + quantity > MAX_SUPPLY) revert ExceedsLimit();
@@ -114,13 +115,16 @@ contract StakingNFT is ERC721MStaking, Owned {
         signerAddress = _address;
     }
 
-    function airdrop(
-        address[] calldata users,
-        uint256[] calldata amounts,
-        bool locked
-    ) external onlyOwner {
-        if (locked) for (uint256 i; i < users.length; ++i) _mintAndStake(users[i], amounts[i]);
-        else for (uint256 i; i < users.length; ++i) _mint(users[i], amounts[i]);
+    function airdrop(address[] calldata users, uint256[] calldata amounts, bool locked) external onlyOwner {
+        if (locked) {
+            for (uint256 i; i < users.length; ++i) {
+                _mintAndStake(users[i], amounts[i]);
+            }
+        } else {
+            for (uint256 i; i < users.length; ++i) {
+                _mint(users[i], amounts[i]);
+            }
+        }
     }
 
     function withdraw() external onlyOwner {
